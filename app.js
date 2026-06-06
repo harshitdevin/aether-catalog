@@ -1118,8 +1118,20 @@ function bindEvents() {
     }
   });
 
-  // Catalog Filters trigger
-  DOM.catalogSearch.addEventListener('input', renderCatalog);
+  // Global & Catalog Search sync & trigger
+  DOM.globalSearch.addEventListener('input', (e) => {
+    const val = e.target.value;
+    DOM.catalogSearch.value = val;
+    if (window.location.hash !== '#catalog') {
+      window.location.hash = '#catalog';
+    }
+    renderCatalog();
+  });
+
+  DOM.catalogSearch.addEventListener('input', (e) => {
+    DOM.globalSearch.value = e.target.value;
+    renderCatalog();
+  });
   DOM.filterCat.addEventListener('change', renderCatalog);
   DOM.filterStatus.addEventListener('change', renderCatalog);
   DOM.filterCond.addEventListener('change', renderCatalog);
