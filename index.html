@@ -541,8 +541,15 @@
               </div>
 
               <form id="asset-reg-form" class="custom-form">
-                <div class="form-row">
-                  <div class="form-field full-width">
+                <div class="form-row split">
+                  <div class="form-field">
+                    <label for="form-quantity">Quantity <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                      <input type="number" id="form-quantity" required min="1" value="1" placeholder="e.g. 1">
+                      <div class="glow-indicator"></div>
+                    </div>
+                  </div>
+                  <div class="form-field">
                     <label for="form-name">Asset Name <span class="required">*</span></label>
                     <div class="input-wrapper">
                       <input type="text" id="form-name" required placeholder="e.g. MacBook Pro M3 Max">
@@ -633,21 +640,14 @@
                   </div>
                 </div>
 
-                <div class="form-row split">
-                  <div class="form-field">
-                    <label for="form-quantity">Quantity <span class="required">*</span></label>
-                    <div class="input-wrapper">
-                      <input type="number" id="form-quantity" required min="1" value="1" placeholder="e.g. 1">
-                      <div class="glow-indicator"></div>
-                    </div>
-                  </div>
-                  <div class="form-field"></div>
-                </div>
-
-                <!-- Dynamic Itemized Serials & Models Container -->
+                <!-- Dynamic Itemized Serials Container -->
                 <div id="dynamic-items-container" class="form-row full-width hidden" style="margin-top: 15px; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-md);">
-                  <h4 style="color: var(--color-accent); font-size: 14px; font-weight: 700; margin-bottom: 12px;">Itemized Serials & Models:</h4>
-                  <div id="dynamic-items-list"></div>
+                  <label for="form-item-serials" style="color: var(--color-accent); font-size: 14px; font-weight: 700; margin-bottom: 8px; display: block;">Itemized Serial Numbers (one per line or comma-separated):</label>
+                  <div class="input-wrapper">
+                    <textarea id="form-item-serials" rows="5" placeholder="Enter one serial number per line or separated by commas.&#10;Example:&#10;SN-APL982K11&#10;SN-APL982K12&#10;SN-APL982K13" style="width: 100%; min-height: 120px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); border-radius: var(--border-radius-sm); padding: 10px; color: var(--text-primary); font-family: monospace; font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
+                    <div class="glow-indicator"></div>
+                  </div>
+                  <span class="activity-time" style="margin-top: 6px; display: block; font-size: 11px; color: var(--text-muted);">If left empty or incomplete, remaining serials will be automatically generated based on the base Serial Tag.</span>
                 </div>
 
                 <div class="form-row">

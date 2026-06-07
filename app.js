@@ -818,20 +818,47 @@ function renderCatalog() {
     return matchesSearch && matchesCat && matchesStatus && matchesCond;
   });
 
+  // Group filtered assets by base name to avoid duplicate cards for products with quantity > 1
+  const grouped = [];
+  const baseNameMap = {};
+
+  filtered.forEach(asset => {
+    const baseName = asset.name.replace(/\s*\(\d+\/\d+\)$/, '');
+    if (!baseNameMap[baseName]) {
+      baseNameMap[baseName] = {
+        baseName: baseName,
+        instances: [],
+        primaryAsset: asset
+      };
+      grouped.push(baseNameMap[baseName]);
+    }
+    baseNameMap[baseName].instances.push(asset);
+  });
+
   // 2. Sorting operations
-  filtered.sort((a, b) => {
-    if (sortVal === 'date-desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (sortVal === 'date-asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    if (sortVal === 'value-desc') return parseFloat(b.value || 0) - parseFloat(a.value || 0);
-    if (sortVal === 'value-asc') return parseFloat(a.value || 0) - parseFloat(b.value || 0);
-    if (sortVal === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+  grouped.sort((a, b) => {
+    const assetA = a.primaryAsset;
+    const assetB = b.primaryAsset;
+    if (sortVal === 'date-desc') return new Date(assetB.createdAt).getTime() - new Date(assetA.createdAt).getTime();
+    if (sortVal === 'date-asc') return new Date(assetA.createdAt).getTime() - new Date(assetB.createdAt).getTime();
+    if (sortVal === 'value-desc') {
+      const valA = a.instances.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
+      const valB = b.instances.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
+      return valB - valA;
+    }
+    if (sortVal === 'value-asc') {
+      const valA = a.instances.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
+      const valB = b.instances.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
+      return valA - valB;
+    }
+    if (sortVal === 'name-asc') return a.baseName.localeCompare(b.baseName);
     return 0;
   });
 
   // Render nodes
   DOM.catalogGrid.innerHTML = '';
   
-  if (filtered.length === 0) {
+  if (grouped.length === 0) {
     DOM.catalogGrid.classList.add('hidden');
     DOM.catalogEmpty.classList.remove('hidden');
     return;
@@ -840,30 +867,35 @@ function renderCatalog() {
   DOM.catalogGrid.classList.remove('hidden');
   DOM.catalogEmpty.classList.add('hidden');
 
-  filtered.forEach(asset => {
+  grouped.forEach(group => {
+    const primary = group.primaryAsset;
+    const qty = group.instances.length;
     const card = document.createElement('div');
     card.className = 'asset-card glassmorphic';
     
+    // Display total value of the group
+    const totalVal = group.instances.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
     const formattedVal = new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR'
-    }).format(asset.value || 0);
+    }).format(totalVal);
 
-    const statusClass = (asset.status || '').toLowerCase().replace(' ', '');
-    const condColor = CATEGORY_COLORS[asset.category] || CATEGORY_COLORS['default'];
+    const statusClass = (primary.status || '').toLowerCase().replace(' ', '');
+    const condColor = CATEGORY_COLORS[primary.category] || CATEGORY_COLORS['default'];
 
     card.innerHTML = `
       <div class="card-image-box">
-        <img src="${asset.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231e293b%22 width=%22100%22 height=%22100%22/></svg>'}" alt="${asset.name}">
-        <span class="card-badge ${statusClass}">${asset.status}</span>
+        <img src="${primary.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231e293b%22 width=%22100%22 height=%22100%22/></svg>'}" alt="${group.baseName}">
+        <span class="card-badge ${statusClass}">${primary.status}</span>
+        ${qty > 1 ? `<span class="card-qty-badge">${qty}x</span>` : ''}
       </div>
-      <div class="card-cat" style="color: ${condColor}">${asset.category}</div>
-      <div class="card-name" title="${asset.name}">${asset.name}</div>
+      <div class="card-cat" style="color: ${condColor}">${primary.category}</div>
+      <div class="card-name" title="${group.baseName}">${group.baseName}</div>
       <div class="card-meta-row">
-        <span>LOC: <strong>${asset.location || 'N/A'}</strong></span>
+        <span>LOC: <strong>${primary.location || 'N/A'}</strong></span>
         <span class="card-condition-dot">
-          <span class="condition-indicator condition-${asset.condition}"></span>
-          ${asset.condition}
+          <span class="condition-indicator condition-${primary.condition}"></span>
+          ${primary.condition}
         </span>
       </div>
       <div class="card-value">
@@ -874,7 +906,7 @@ function renderCatalog() {
       </div>
     `;
 
-    card.addEventListener('click', () => openDetailModal(asset.id));
+    card.addEventListener('click', () => openDetailModal(primary.id));
     DOM.catalogGrid.appendChild(card);
   });
 }
@@ -897,18 +929,48 @@ function openDetailModal(id) {
   DOM.modalCat.textContent = asset.category;
   DOM.modalCat.style.color = CATEGORY_COLORS[asset.category] || CATEGORY_COLORS['default'];
   
-  DOM.modalName.textContent = asset.name;
+  const baseName = asset.name.replace(/\s*\(\d+\/\d+\)$/, '');
+  const allRelated = DB.getAllAssets().filter(a => a.name.replace(/\s*\(\d+\/\d+\)$/, '') === baseName && a.status !== 'Sold');
   
-  DOM.modalVal.textContent = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR'
-  }).format(asset.value || 0);
+  if (allRelated.length > 1) {
+    DOM.modalName.textContent = `${baseName} (${allRelated.length} Units)`;
+    
+    // Grouped Valuation
+    const totalVal = allRelated.reduce((sum, inst) => sum + parseFloat(inst.value || 0), 0);
+    DOM.modalVal.textContent = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(totalVal) + ` (₹${new Intl.NumberFormat('en-IN').format(asset.value || 0)}/ea)`;
+    
+    // List all unique models
+    const models = Array.from(new Set(allRelated.map(r => r.model || 'N/A')));
+    DOM.modalModel.textContent = models.join(', ');
+    
+    // List all unique locations
+    const locations = Array.from(new Set(allRelated.map(r => r.location || 'N/A')));
+    DOM.modalLoc.textContent = locations.join(', ');
+
+    // List all unique conditions
+    const conditions = Array.from(new Set(allRelated.map(r => r.condition || 'N/A')));
+    DOM.modalCond.textContent = conditions.join(', ');
+
+    // Render serials as custom styled badges
+    DOM.modalSerial.innerHTML = allRelated.map(r => `<code class="serial-badge">${r.serial || 'N/A'}</code>`).join(' ');
+  } else {
+    DOM.modalName.textContent = asset.name;
+    
+    DOM.modalVal.textContent = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(asset.value || 0);
+
+    DOM.modalModel.textContent = asset.model || 'N/A';
+    DOM.modalLoc.textContent = asset.location || 'N/A';
+    DOM.modalCond.textContent = asset.condition;
+    DOM.modalSerial.textContent = asset.serial || 'N/A';
+  }
 
   DOM.modalMan.textContent = asset.manufacturer || 'N/A';
-  DOM.modalModel.textContent = asset.model || 'N/A';
-  DOM.modalCond.textContent = asset.condition;
-  DOM.modalLoc.textContent = asset.location || 'N/A';
-  DOM.modalSerial.textContent = asset.serial || 'N/A';
   
   DOM.modalDate.textContent = new Date(asset.createdAt).toLocaleDateString('en-US', {
     day: 'numeric', month: 'short', year: 'numeric'
@@ -1885,9 +1947,20 @@ function bindEvents() {
   DOM.detailsClose.addEventListener('click', closeDetailModal);
   DOM.modalDeleteBtn.addEventListener('click', () => {
     if (AppState.activeAssetId) {
-      const confirm = window.confirm("Are you sure you want to permanently delete this asset record?");
+      const asset = DB.getAssetById(AppState.activeAssetId);
+      if (!asset) return;
+      
+      const baseName = asset.name.replace(/\s*\(\d+\/\d+\)$/, '');
+      const allRelated = DB.getAllAssets().filter(a => a.name.replace(/\s*\(\d+\/\d+\)$/, '') === baseName && a.status !== 'Sold');
+      
+      const msg = allRelated.length > 1 
+        ? `Are you sure you want to permanently delete all ${allRelated.length} units of "${baseName}"?`
+        : `Are you sure you want to permanently delete this asset record?`;
+        
+      const confirm = window.confirm(msg);
       if (confirm) {
-        DB.deleteAsset(AppState.activeAssetId);
+        allRelated.forEach(r => DB.deleteAsset(r.id, true));
+        DB.logActivity('del', `Asset group <strong>${baseName}</strong> (${allRelated.length} units) removed from catalog.`);
         closeDetailModal();
         renderCatalog();
         Dashboard.updateDashboard();
@@ -1934,83 +2007,19 @@ function bindEvents() {
   // Dynamic Quantity Itemized Fields Sync
   const quantityInput = document.getElementById('form-quantity');
   const dynamicContainer = document.getElementById('dynamic-items-container');
-  const dynamicList = document.getElementById('dynamic-items-list');
 
   const updateDynamicFields = () => {
     const qty = parseInt(quantityInput.value) || 1;
     if (qty <= 1) {
       dynamicContainer.classList.add('hidden');
-      dynamicList.innerHTML = '';
+      const textEl = document.getElementById('form-item-serials');
+      if (textEl) textEl.value = '';
       return;
     }
-
     dynamicContainer.classList.remove('hidden');
-    
-    const baseModel = document.getElementById('form-model').value;
-    const baseSerial = document.getElementById('form-serial').value;
-
-    let html = '';
-    for (let i = 1; i <= qty; i++) {
-      const existingModelInput = document.getElementById(`form-item-model-${i}`);
-      const existingSerialInput = document.getElementById(`form-item-serial-${i}`);
-      
-      const defaultModel = existingModelInput ? existingModelInput.value : (baseModel ? (i === 1 ? baseModel : `${baseModel}-${i}`) : '');
-      const defaultSerial = existingSerialInput ? existingSerialInput.value : (baseSerial ? (i === 1 ? baseSerial : `${baseSerial}-${i}`) : '');
-
-      html += `
-        <div class="form-row split" style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 10px; align-items: flex-end;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); width: 100%; display: block; margin-bottom: 4px; text-transform: uppercase;">Item ${i} Details:</div>
-          <div class="form-field">
-            <label for="form-item-model-${i}">Model Number</label>
-            <div class="input-wrapper">
-              <input type="text" id="form-item-model-${i}" class="dynamic-item-model" placeholder="e.g. A2991" value="${defaultModel}">
-              <div class="glow-indicator"></div>
-            </div>
-          </div>
-          <div class="form-field">
-            <label for="form-item-serial-${i}">Serial / Asset Tag</label>
-            <div class="input-wrapper">
-              <input type="text" id="form-item-serial-${i}" class="dynamic-item-serial" placeholder="e.g. SN-A982H2K" value="${defaultSerial}">
-              <div class="glow-indicator"></div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    dynamicList.innerHTML = html;
   };
 
   quantityInput.addEventListener('input', updateDynamicFields);
-  document.getElementById('form-model').addEventListener('input', () => {
-    const qty = parseInt(quantityInput.value) || 1;
-    if (qty > 1) {
-      const baseModel = document.getElementById('form-model').value;
-      for (let i = 1; i <= qty; i++) {
-        const input = document.getElementById(`form-item-model-${i}`);
-        if (input && !input.dataset.userEdited) {
-          input.value = baseModel ? (i === 1 ? baseModel : `${baseModel}-${i}`) : '';
-        }
-      }
-    }
-  });
-  document.getElementById('form-serial').addEventListener('input', () => {
-    const qty = parseInt(quantityInput.value) || 1;
-    if (qty > 1) {
-      const baseSerial = document.getElementById('form-serial').value;
-      for (let i = 1; i <= qty; i++) {
-        const input = document.getElementById(`form-item-serial-${i}`);
-        if (input && !input.dataset.userEdited) {
-          input.value = baseSerial ? (i === 1 ? baseSerial : `${baseSerial}-${i}`) : '';
-        }
-      }
-    }
-  });
-
-  dynamicList.addEventListener('input', (e) => {
-    if (e.target.classList.contains('dynamic-item-model') || e.target.classList.contains('dynamic-item-serial')) {
-      e.target.dataset.userEdited = 'true';
-    }
-  });
 
   // Forms interactions
   setupDropzone();
@@ -2030,7 +2039,8 @@ function bindEvents() {
     DOM.aiExtractStatus.textContent = 'Waiting for input';
     DOM.aiExtractStatus.className = 'form-mode-badge';
     dynamicContainer.classList.add('hidden');
-    dynamicList.innerHTML = '';
+    const serialsArea = document.getElementById('form-item-serials');
+    if (serialsArea) serialsArea.value = '';
     
     // Reset preset card styling
     document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
@@ -2075,16 +2085,18 @@ function bindEvents() {
       };
       DB.saveAsset(payload);
     } else {
+      const serialsText = document.getElementById('form-item-serials').value;
+      const lines = serialsText ? serialsText.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0) : [];
+      
       for (let i = 1; i <= qty; i++) {
-        const itemModel = document.getElementById(`form-item-model-${i}`).value || baseModel;
-        const itemSerial = document.getElementById(`form-item-serial-${i}`).value || baseSerial;
+        const itemSerial = lines[i - 1] || (baseSerial ? (i === 1 ? baseSerial : `${baseSerial}-${i}`) : '');
         
         const payload = {
           name: `${baseName} (${i}/${qty})`,
           category,
           value,
           manufacturer,
-          model: itemModel,
+          model: baseModel,
           condition,
           status,
           location,
