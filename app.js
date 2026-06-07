@@ -887,7 +887,7 @@ function renderCatalog() {
       <div class="card-image-box">
         <img src="${primary.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231e293b%22 width=%22100%22 height=%22100%22/></svg>'}" alt="${group.baseName}">
         <span class="card-badge ${statusClass}">${primary.status}</span>
-        ${qty > 1 ? `<span class="card-qty-badge">${qty}x</span>` : ''}
+        <span class="card-qty-badge">Qty: ${qty}</span>
       </div>
       <div class="card-cat" style="color: ${condColor}">${primary.category}</div>
       <div class="card-name" title="${group.baseName}">${group.baseName}</div>
