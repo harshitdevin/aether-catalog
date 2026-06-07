@@ -13,7 +13,8 @@ const AppState = {
   selectedImageBase64: null,
   selectedImageMimeType: null,
   activeAssetId: null,
-  isMicActive: false
+  isMicActive: false,
+  checkoutCart: []
 };
 
 // DOM Elements Cache
@@ -116,7 +117,46 @@ const DOM = {
   tabAdmin: document.getElementById('tab-admin'),
   tabUser: document.getElementById('tab-user'),
   headerRoleBadge: document.getElementById('header-role-badge'),
-  userAvatarText: document.getElementById('user-avatar-text')
+  userAvatarText: document.getElementById('user-avatar-text'),
+
+  // Checkout View Elements
+  checkoutAssetSelect: document.getElementById('checkout-asset-select'),
+  checkoutPreview: document.getElementById('checkout-preview'),
+  checkoutCartItems: document.getElementById('checkout-cart-items'),
+  checkoutCartTotalCost: document.getElementById('checkout-cart-total-cost'),
+  checkoutForm: document.getElementById('checkout-reg-form'),
+  checkoutAssetId: document.getElementById('checkout-asset-id'),
+  checkoutPrice: document.getElementById('checkout-price'),
+  checkoutCustomer: document.getElementById('checkout-customer'),
+  checkoutNotes: document.getElementById('checkout-notes'),
+  checkoutResetBtn: document.getElementById('checkout-reset-btn'),
+
+  // Sales View Elements
+  exportSalesBtn: document.getElementById('export-sales-btn'),
+  salesStatSold: document.getElementById('sales-stat-sold'),
+  salesStatRevenue: document.getElementById('sales-stat-revenue'),
+  salesStatProfit: document.getElementById('sales-stat-profit'),
+  salesStatProfitLbl: document.getElementById('sales-stat-profit-lbl'),
+  salesStatAvg: document.getElementById('sales-stat-avg'),
+  salesSearch: document.getElementById('sales-search'),
+  salesLedgerTbody: document.getElementById('sales-ledger-tbody'),
+  salesLedgerEmpty: document.getElementById('sales-ledger-empty'),
+  salesRevenueBars: document.getElementById('sales-revenue-bars'),
+
+  // Receipt Modal Elements
+  receiptModal: document.getElementById('receipt-modal'),
+  receiptModalClose: document.getElementById('receipt-modal-close'),
+  receiptId: document.getElementById('receipt-id'),
+  receiptDate: document.getElementById('receipt-date'),
+  receiptCustomer: document.getElementById('receipt-customer'),
+  receiptItemName: document.getElementById('receipt-item-name'),
+  receiptItemModel: document.getElementById('receipt-item-model'),
+  receiptItemSerial: document.getElementById('receipt-item-serial'),
+  receiptCostVal: document.getElementById('receipt-cost-val'),
+  receiptSalePrice: document.getElementById('receipt-sale-price'),
+  receiptNetProfit: document.getElementById('receipt-net-profit'),
+  receiptNotes: document.getElementById('receipt-notes'),
+  receiptBtnRefund: document.getElementById('receipt-btn-refund')
 };
 
 // ==========================================================================
@@ -135,7 +175,7 @@ function initRouter() {
     const viewName = hash.replace('#', '');
     
     // Route guard for Admin-only views
-    const adminViews = ['register', 'handsfree', 'settings'];
+    const adminViews = ['register', 'handsfree', 'settings', 'checkout', 'sales'];
     const currentUser = JSON.parse(localStorage.getItem('aether_logged_in_user') || 'null');
     const isStaff = currentUser && currentUser.role === 'staff';
     const isLoggedOut = !currentUser;
@@ -174,6 +214,11 @@ function initRouter() {
       } else if (viewName === 'handsfree') {
         // Ensure wizard resets
         VoiceEngine.HandsFreeWizard.stop();
+      } else if (viewName === 'checkout') {
+        populateCheckoutAssetSelect();
+        resetCheckoutForm();
+      } else if (viewName === 'sales') {
+        renderSalesDashboard();
       }
     }
   };
@@ -185,6 +230,506 @@ function initRouter() {
   } else {
     handleRouting();
   }
+}
+
+// ==========================================================================
+// 1.5. Product Checkout & Sales Dashboard Handlers
+// ==========================================================================
+function populateCheckoutAssetSelect() {
+  const assets = DB.getAllAssets();
+  const select = DOM.checkoutAssetSelect;
+  if (!select) return;
+
+  select.innerHTML = '<option value="">-- Choose Asset to Add --</option>';
+
+  const activeAssets = assets.filter(a => a.status !== 'Sold');
+  
+  // Group active assets by base name
+  const groups = {};
+  activeAssets.forEach(asset => {
+    const baseName = asset.name.replace(/\s*\(\d+\/\d+\)$/, '');
+    if (!groups[baseName]) {
+      groups[baseName] = [];
+    }
+    groups[baseName].push(asset);
+  });
+
+  // Populate select with items not yet in checkout cart
+  Object.keys(groups).forEach(baseName => {
+    const isAlreadyInCart = AppState.checkoutCart.some(item => item.baseName === baseName);
+    if (!isAlreadyInCart) {
+      const opt = document.createElement('option');
+      opt.value = baseName;
+      opt.textContent = `${baseName} (${groups[baseName].length} available)`;
+      select.appendChild(opt);
+    }
+  });
+}
+
+function handleCheckoutAssetChange() {
+  const baseName = DOM.checkoutAssetSelect.value;
+  if (!baseName) return;
+
+  const assets = DB.getAllAssets().filter(a => a.status !== 'Sold');
+  const matchingAssets = assets.filter(a => a.name.replace(/\s*\(\d+\/\d+\)$/, '') === baseName);
+
+  if (matchingAssets.length === 0) return;
+
+  const firstAsset = matchingAssets[0];
+  const cartItem = {
+    baseName: baseName,
+    category: firstAsset.category,
+    image: firstAsset.image,
+    unitValue: parseFloat(firstAsset.value || 0),
+    quantity: 1,
+    salePrices: [parseFloat(firstAsset.value || 0)],
+    maxAvailable: matchingAssets.length,
+    allAssets: matchingAssets
+  };
+
+  AppState.checkoutCart.push(cartItem);
+
+  // Reset dropdown selection
+  DOM.checkoutAssetSelect.value = '';
+
+  // Render and refresh dropdown
+  renderCheckoutCart();
+  populateCheckoutAssetSelect();
+}
+
+function renderCheckoutCart() {
+  const cart = AppState.checkoutCart;
+  const itemsContainer = DOM.checkoutCartItems;
+  const totalCostEl = DOM.checkoutCartTotalCost;
+  
+  if (!itemsContainer) return;
+
+  if (cart.length === 0) {
+    DOM.checkoutPreview.classList.add('hidden');
+    DOM.checkoutPrice.value = '';
+    DOM.checkoutAssetId.value = '';
+    return;
+  }
+
+  DOM.checkoutPreview.classList.remove('hidden');
+  itemsContainer.innerHTML = '';
+
+  let grandOriginalValue = 0;
+  let grandSalePrice = 0;
+  const selectedIds = [];
+
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(val);
+  };
+
+  cart.forEach(item => {
+    grandOriginalValue += item.unitValue * item.quantity;
+
+    // Sum of individual sale prices
+    const itemSubtotal = item.salePrices.reduce((sum, p) => sum + p, 0);
+    grandSalePrice += itemSubtotal;
+
+    // Get selected individual asset IDs
+    const selectedAssets = item.allAssets.slice(0, item.quantity);
+    selectedAssets.forEach(a => selectedIds.push(a.id));
+
+    // Render individual itemized price controls
+    let itemRowsHtml = '';
+    selectedAssets.forEach((asset, index) => {
+      const price = item.salePrices[index];
+      itemRowsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding-left: 10px; margin-bottom: 4px;">
+          <span style="color: var(--text-secondary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">
+            Item ${index + 1}: <strong style="color: var(--text-primary);">${asset.serial || 'No Serial'}</strong> (${asset.model || 'N/A'})
+          </span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: var(--text-muted);">Sale Price (₹):</span>
+            <input type="number" class="cart-item-individual-price" data-base-name="${item.baseName}" data-index="${index}" step="0.01" value="${price}" style="width: 80px; padding: 2px 4px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px; text-align: right; font-size: 11px;">
+          </div>
+        </div>
+      `;
+    });
+
+    const div = document.createElement('div');
+    div.className = 'cart-item-row';
+    div.style.cssText = 'display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.02); position: relative; margin-bottom: 12px;';
+
+    div.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1;">
+          <div style="width: 40px; height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--glass-border); flex-shrink: 0; background: rgba(0,0,0,0.2);">
+            <img src="${item.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22/></svg>'}" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--color-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.baseName}">
+              ${item.baseName}
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Value: ${formatCurrency(item.unitValue)} | Avail: ${item.maxAvailable}
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: var(--text-secondary);">Qty:</span>
+            <input type="number" class="cart-item-qty" data-base-name="${item.baseName}" min="1" max="${item.maxAvailable}" value="${item.quantity}" style="width: 48px; padding: 3px 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px; text-align: center; font-size: 11px;">
+          </div>
+          <button type="button" class="cart-item-remove" data-base-name="${item.baseName}" style="background: none; border: none; color: var(--color-danger); cursor: pointer; padding: 0 5px; font-size: 18px; line-height: 1; font-weight: bold;">
+            &times;
+          </button>
+        </div>
+      </div>
+      <div style="margin-top: 4px; border-top: 1px dashed var(--glass-border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+        ${itemRowsHtml}
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 6px; margin-top: 4px; color: var(--color-success);">
+        <span>Subtotal:</span>
+        <span>${formatCurrency(itemSubtotal)}</span>
+      </div>
+    `;
+
+    itemsContainer.appendChild(div);
+  });
+
+  if (totalCostEl) {
+    totalCostEl.textContent = formatCurrency(grandOriginalValue);
+  }
+
+  DOM.checkoutAssetId.value = selectedIds.join(',');
+  DOM.checkoutPrice.value = grandSalePrice.toFixed(2);
+}
+
+function resetCheckoutForm() {
+  AppState.checkoutCart = [];
+  if (DOM.checkoutForm) {
+    DOM.checkoutForm.reset();
+  }
+  renderCheckoutCart();
+  populateCheckoutAssetSelect();
+}
+
+function handleCheckoutSubmit(e) {
+  e.preventDefault();
+
+  const cart = AppState.checkoutCart;
+  if (cart.length === 0) {
+    alert("Please add at least one product to check out.");
+    return;
+  }
+
+  const soldTo = DOM.checkoutCustomer.value.trim() || 'Anonymous';
+  const notes = DOM.checkoutNotes.value.trim();
+
+  let totalCheckedOut = 0;
+  let totalSaleValue = 0;
+
+  cart.forEach(item => {
+    const selectedAssets = item.allAssets.slice(0, item.quantity);
+    selectedAssets.forEach((asset, index) => {
+      const salePrice = item.salePrices[index];
+      const saleRecord = {
+        id: `SALE-${Math.floor(10000 + Math.random() * 90000)}`,
+        assetId: asset.id,
+        assetName: asset.name,
+        category: asset.category,
+        manufacturer: asset.manufacturer,
+        model: asset.model,
+        serial: asset.serial,
+        costValue: asset.value,
+        salePrice: salePrice,
+        profit: salePrice - asset.value,
+        soldDate: new Date().toISOString(),
+        soldTo: soldTo,
+        notes: notes,
+        image: asset.image
+      };
+
+      DB.saveSale(saleRecord);
+
+      // Delete from assets inventory completely rather than marking as sold
+      DB.deleteAsset(asset.id, true);
+
+      totalCheckedOut++;
+      totalSaleValue += salePrice;
+    });
+  });
+
+  const formattedTotalSale = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR'
+  }).format(totalSaleValue);
+
+  DB.logActivity('update', `Checked out <strong>${totalCheckedOut} items</strong> sold to <strong>${soldTo}</strong> for <strong>${formattedTotalSale}</strong>.`);
+
+  if (DOM.prefTTS && DOM.prefTTS.checked) {
+    VoiceEngine.speak(`Checkout complete for ${totalCheckedOut} items. Grand total is ${totalSaleValue} rupees.`);
+  }
+
+  resetCheckoutForm();
+  window.location.hash = '#sales';
+}
+
+function renderSalesDashboard() {
+  const sales = DB.getAllSales();
+  
+  const totalSold = sales.length;
+  const grossRevenue = sales.reduce((sum, s) => sum + parseFloat(s.salePrice || 0), 0);
+  const totalCost = sales.reduce((sum, s) => sum + parseFloat(s.costValue || 0), 0);
+  const netProfit = grossRevenue - totalCost;
+  const avgOrderVal = totalSold > 0 ? (grossRevenue / totalSold) : 0;
+
+  if (DOM.salesStatSold) DOM.salesStatSold.textContent = totalSold;
+  
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(val);
+  };
+
+  if (DOM.salesStatRevenue) DOM.salesStatRevenue.textContent = formatCurrency(grossRevenue);
+  if (DOM.salesStatProfit) DOM.salesStatProfit.textContent = formatCurrency(netProfit);
+  
+  if (DOM.salesStatProfitLbl) {
+    if (netProfit >= 0) {
+      DOM.salesStatProfitLbl.className = 'metric-footer success';
+      DOM.salesStatProfitLbl.innerHTML = `<span>Net Profit Margin (Gain)</span>`;
+      if (DOM.salesStatProfit) DOM.salesStatProfit.style.color = 'var(--color-success)';
+    } else {
+      DOM.salesStatProfitLbl.className = 'metric-footer danger';
+      DOM.salesStatProfitLbl.innerHTML = `<span>Net Loss Margin (Deficit)</span>`;
+      if (DOM.salesStatProfit) DOM.salesStatProfit.style.color = 'var(--color-danger)';
+    }
+  }
+
+  if (DOM.salesStatAvg) DOM.salesStatAvg.textContent = formatCurrency(avgOrderVal);
+
+  renderSalesLedger();
+  renderSalesCategoryChart(sales);
+}
+
+function renderSalesLedger() {
+  const sales = DB.getAllSales();
+  const searchVal = DOM.salesSearch ? DOM.salesSearch.value.toLowerCase().trim() : '';
+
+  const filtered = sales.filter(s => {
+    return searchVal === '' ||
+      (s.id && s.id.toLowerCase().includes(searchVal)) ||
+      (s.assetName && s.assetName.toLowerCase().includes(searchVal)) ||
+      (s.soldTo && s.soldTo.toLowerCase().includes(searchVal)) ||
+      (s.model && s.model.toLowerCase().includes(searchVal)) ||
+      (s.serial && s.serial.toLowerCase().includes(searchVal)) ||
+      (s.category && s.category.toLowerCase().includes(searchVal));
+  });
+
+  const tbody = DOM.salesLedgerTbody;
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    if (DOM.salesLedgerEmpty) DOM.salesLedgerEmpty.classList.remove('hidden');
+    return;
+  }
+
+  if (DOM.salesLedgerEmpty) DOM.salesLedgerEmpty.classList.add('hidden');
+
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(val);
+  };
+
+  filtered.forEach(sale => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--glass-border)';
+    tr.style.cursor = 'pointer';
+    tr.style.transition = 'background-color var(--transition-fast)';
+    
+    tr.addEventListener('mouseenter', () => {
+      tr.style.backgroundColor = 'rgba(255,255,255,0.02)';
+    });
+    tr.addEventListener('mouseleave', () => {
+      tr.style.backgroundColor = 'transparent';
+    });
+
+    const profitColor = sale.profit >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+    const profitSign = sale.profit >= 0 ? '+' : '';
+    const formattedProfit = formatCurrency(sale.profit);
+    const saleDateStr = new Date(sale.soldDate).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+
+    tr.innerHTML = `
+      <td style="padding: 12px 5px; font-weight: 700; color: var(--color-accent);">${sale.id}</td>
+      <td style="padding: 12px 5px; font-weight: 600;">${sale.assetName}</td>
+      <td style="padding: 12px 5px; color: var(--text-secondary);">${sale.serial || 'N/A'}</td>
+      <td style="padding: 12px 5px;">${formatCurrency(sale.costValue)}</td>
+      <td style="padding: 12px 5px; font-weight: 600; color: var(--color-success);">${formatCurrency(sale.salePrice)}</td>
+      <td style="padding: 12px 5px; font-weight: 700; color: ${profitColor};">${profitSign}${formattedProfit}</td>
+      <td style="padding: 12px 5px; color: var(--text-secondary);">${saleDateStr}</td>
+    `;
+
+    tr.addEventListener('click', () => openReceiptModal(sale));
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSalesCategoryChart(sales) {
+  const barsContainer = DOM.salesRevenueBars;
+  if (!barsContainer) return;
+
+  barsContainer.innerHTML = '';
+
+  if (sales.length === 0) {
+    barsContainer.innerHTML = '<p class="activity-time" style="text-align: center; padding: 20px 0;">No sales category data available.</p>';
+    return;
+  }
+
+  const tally = {};
+  sales.forEach(s => {
+    const cat = s.category || 'Uncategorized';
+    tally[cat] = (tally[cat] || 0) + parseFloat(s.salePrice || 0);
+  });
+
+  const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+  const maxVal = sorted.length > 0 ? sorted[0][1] : 1;
+
+  sorted.forEach(([name, val]) => {
+    const percentage = (val / maxVal) * 100;
+    const formattedVal = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(val);
+
+    const color = CATEGORY_COLORS[name] || CATEGORY_COLORS['default'];
+
+    const barRow = document.createElement('div');
+    barRow.className = 'bar-row';
+    barRow.innerHTML = `
+      <div class="bar-meta">
+        <span class="bar-name" style="font-weight: 700;">${name}</span>
+        <span class="bar-value" style="color: ${color}; font-weight: 800;">${formattedVal}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width: 0%; background: linear-gradient(90deg, ${color}, ${color}80);"></div>
+      </div>
+    `;
+
+    barsContainer.appendChild(barRow);
+
+    setTimeout(() => {
+      const fill = barRow.querySelector('.bar-fill');
+      if (fill) fill.style.width = `${percentage}%`;
+    }, 50);
+  });
+}
+
+let activeReceiptSale = null;
+
+function openReceiptModal(sale) {
+  activeReceiptSale = sale;
+
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(val);
+  };
+
+  const saleDateStr = new Date(sale.soldDate).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  DOM.receiptId.textContent = sale.id;
+  DOM.receiptDate.textContent = saleDateStr;
+  DOM.receiptCustomer.textContent = sale.soldTo;
+  DOM.receiptItemName.textContent = sale.assetName;
+  DOM.receiptItemModel.textContent = sale.model || 'N/A';
+  DOM.receiptItemSerial.textContent = sale.serial || 'N/A';
+  DOM.receiptCostVal.textContent = formatCurrency(sale.costValue);
+  DOM.receiptSalePrice.textContent = formatCurrency(sale.salePrice);
+  
+  const formattedProfit = formatCurrency(sale.profit);
+  const profitSign = sale.profit >= 0 ? '+' : '';
+  DOM.receiptNetProfit.textContent = `${profitSign}${formattedProfit}`;
+  DOM.receiptNetProfit.style.color = sale.profit >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+  
+  DOM.receiptNotes.textContent = sale.notes || 'No notes available.';
+
+  DOM.receiptModal.classList.remove('hidden');
+}
+
+function closeReceiptModal() {
+  DOM.receiptModal.classList.add('hidden');
+  activeReceiptSale = null;
+}
+
+function handleUndoCheckout() {
+  if (!activeReceiptSale) return;
+
+  const confirm = window.confirm(`Are you sure you want to refund this sale and return the item back to the active catalog?`);
+  if (!confirm) return;
+
+  const sale = activeReceiptSale;
+  
+  DB.deleteSale(sale.id);
+
+  // Recreate the asset record since it was deleted during checkout
+  const restoredAsset = {
+    id: sale.assetId,
+    name: sale.assetName,
+    category: sale.category,
+    value: sale.costValue,
+    manufacturer: sale.manufacturer,
+    model: sale.model,
+    serial: sale.serial,
+    condition: 'Excellent',
+    status: 'In Service',
+    location: 'Storage A',
+    notes: 'Restored via refund of Sale ' + sale.id + '.',
+    image: sale.image,
+    createdAt: new Date().toISOString()
+  };
+  DB.saveAsset(restoredAsset);
+
+  DB.logActivity('update', `Refund processed: Sale <strong>${sale.id}</strong> undone. Asset <strong>${sale.assetName}</strong> returned to active service.`);
+
+  if (DOM.prefTTS && DOM.prefTTS.checked) {
+    VoiceEngine.speak("Refund completed. Asset returned to inventory.");
+  }
+
+  closeReceiptModal();
+  renderSalesDashboard();
+  Dashboard.updateDashboard();
+}
+
+function handleExportSalesCSV() {
+  const sales = DB.getAllSales();
+  let csv = 'Sale ID,Asset ID,Asset Name,Category,Manufacturer,Model,Serial,Cost Value (₹),Sale Price (₹),Profit (₹),Sold Date,Customer,Notes\n';
+
+  sales.forEach(s => {
+    csv += `"${s.id}","${s.assetId}","${s.assetName}","${s.category}","${s.manufacturer || ''}","${s.model || ''}","${s.serial || ''}",${s.costValue},${s.salePrice},${s.profit},"${s.soldDate}","${s.soldTo}","${s.notes || ''}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', `Aether_Sales_Ledger_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // ==========================================================================
@@ -423,6 +968,91 @@ function setupDropzone() {
     if (e.target.files.length > 0) {
       handleImageFile(e.target.files[0]);
     }
+  });
+}
+
+function setupPresetPhotos() {
+  const presetCards = document.querySelectorAll('.preset-card');
+  presetCards.forEach(card => {
+    card.addEventListener('click', () => {
+      // 1. Remove active class from all preset cards
+      presetCards.forEach(c => c.classList.remove('active'));
+      
+      // 2. Add active class to clicked card
+      card.classList.add('active');
+      
+      // 3. Update AppState and preview
+      const imagePath = card.getAttribute('data-path');
+      AppState.selectedImageBase64 = imagePath;
+      AppState.selectedImageMimeType = 'image/png';
+      
+      DOM.previewImage.src = imagePath;
+      DOM.dropzonePrompt.classList.add('hidden');
+      DOM.dropzonePreview.classList.remove('hidden');
+      
+      DOM.laser.classList.add('hidden');
+      DOM.scannerBadge.textContent = 'Preset Selected';
+      DOM.scannerBadge.style.backgroundColor = 'rgba(6, 182, 212, 0.9)';
+      DOM.scannerBadge.style.boxShadow = '0 4px 15px rgba(6, 182, 212, 0.4)';
+      DOM.boxesContainer.innerHTML = '';
+      
+      DOM.aiExtractStatus.textContent = 'Preset Loaded';
+      DOM.aiExtractStatus.className = 'form-mode-badge success';
+      
+      // 4. Auto-fill manual form fields
+      const fields = {
+        name: card.getAttribute('data-name'),
+        category: card.getAttribute('data-category'),
+        value: card.getAttribute('data-value'),
+        manufacturer: card.getAttribute('data-manufacturer'),
+        model: card.getAttribute('data-model'),
+        notes: card.getAttribute('data-notes'),
+        tags: card.getAttribute('data-tags')
+      };
+      
+      const formName = document.getElementById('form-name');
+      const formCategory = document.getElementById('form-category');
+      const formValue = document.getElementById('form-value');
+      const formManufacturer = document.getElementById('form-manufacturer');
+      const formModel = document.getElementById('form-model');
+      const formNotes = document.getElementById('form-notes');
+      const formTags = document.getElementById('form-tags');
+      
+      if (fields.name) {
+        formName.value = fields.name;
+        formName.dataset.userEdited = 'true';
+      }
+      if (fields.category) {
+        formCategory.value = fields.category;
+        formCategory.dataset.userEdited = 'true';
+      }
+      if (fields.value) {
+        formValue.value = fields.value;
+        formValue.dataset.userEdited = 'true';
+      }
+      if (fields.manufacturer) {
+        formManufacturer.value = fields.manufacturer;
+        formManufacturer.dataset.userEdited = 'true';
+      }
+      if (fields.model) {
+        formModel.value = fields.model;
+        formModel.dataset.userEdited = 'true';
+      }
+      if (fields.notes) {
+        formNotes.value = fields.notes;
+        formNotes.dataset.userEdited = 'true';
+      }
+      if (fields.tags) {
+        formTags.value = fields.tags;
+        formTags.dataset.userEdited = 'true';
+      }
+      
+      // Sync dynamic item lists if quantity > 1
+      const quantityInput = document.getElementById('form-quantity');
+      if (quantityInput) {
+        quantityInput.dispatchEvent(new Event('input'));
+      }
+    });
   });
 }
 
@@ -683,16 +1313,39 @@ function toggleHandsFreeWizard() {
       onComplete: (data) => {
         // Complete wizard, assign default mockup picture if missing
         if (!data.image) {
-          data.image = AppState.selectedImageBase64 || DB.getAllAssets()[0].image; // fallback
+          data.image = AppState.selectedImageBase64 || (DB.getAllAssets().length > 0 ? DB.getAllAssets()[0].image : 'assets/macbook.png'); // fallback
         }
         
-        DB.saveAsset(data);
+        const qty = parseInt(data.quantity) || 1;
+        if (qty <= 1) {
+          DB.saveAsset(data);
+          DB.logActivity('voice', `Hands-free capture logged: <strong>${data.name}</strong> added successfully via microphone.`);
+        } else {
+          for (let i = 1; i <= qty; i++) {
+            const item = data.items[i - 1];
+            const payload = {
+              name: `${data.name} (${i}/${qty})`,
+              category: data.category,
+              value: parseFloat(data.value) || 0,
+              manufacturer: data.manufacturer || null,
+              model: item.model || data.model || null,
+              condition: data.condition,
+              status: data.status,
+              location: data.location || 'Storage A',
+              serial: item.serial || data.serial || null,
+              tags: data.tags || [],
+              notes: data.notes || '',
+              image: data.image
+            };
+            DB.saveAsset(payload);
+          }
+          DB.logActivity('voice', `Hands-free capture logged: <strong>${qty} items</strong> of <strong>${data.name}</strong> added successfully via microphone.`);
+        }
         
-        DB.logActivity('voice', `Hands-free capture logged: <strong>${data.name}</strong> added successfully via microphone.`);
         Dashboard.updateDashboard();
         
         // Open Success popup or flash
-        DOM.hfPromptVoice.innerHTML = '<span style="color: var(--color-success)">Inventory Record Saved Successfully!</span>';
+        DOM.hfPromptVoice.innerHTML = '<span style="color: var(--color-success)">Inventory Records Saved Successfully!</span>';
       }
     });
   }
@@ -835,9 +1488,28 @@ function updateHandsFreeWizardStepUI(state) {
     case 'CONFIRM':
       const data = VoiceEngine.HandsFreeWizard.capturedData;
       const fields = VoiceEngine.HandsFreeWizard.fields;
+      const qty = parseInt(data.quantity) || 1;
+
+      // Initialize itemized list if qty > 1
+      if (qty > 1) {
+        if (!data.items || data.items.length !== qty) {
+          data.items = [];
+          for (let i = 1; i <= qty; i++) {
+            data.items.push({
+              model: data.model ? (i === 1 ? data.model : `${data.model}-${i}`) : '',
+              serial: data.serial ? (i === 1 ? data.serial : `${data.serial}-${i}`) : ''
+            });
+          }
+        }
+      }
       
       let rowsHtml = '';
       fields.forEach(f => {
+        // Skip model and serial if quantity > 1, as they are itemized
+        if (qty > 1 && (f.key === 'model' || f.key === 'serial')) {
+          return;
+        }
+
         let val = data[f.key];
         if (f.key === 'tags' && Array.isArray(val)) {
           val = val.join(', ');
@@ -849,6 +1521,27 @@ function updateHandsFreeWizardStepUI(state) {
           </div>
         `;
       });
+
+      if (qty > 1) {
+        rowsHtml += `<div style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 8px;">`;
+        for (let i = 1; i <= qty; i++) {
+          const item = data.items[i - 1];
+          rowsHtml += `
+            <div style="margin-top: 8px; background: rgba(255,255,255,0.01); padding: 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+              <div style="font-size: 10px; color: var(--color-accent); font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">Item ${i} Details:</div>
+              <div style="margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:var(--text-secondary); width:35%; text-align:left;">Model #${i}:</span>
+                <input type="text" class="hf-item-review-input" data-index="${i-1}" data-prop="model" value="${item.model || ''}" style="width:60%; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:4px; padding:3px 8px; color:var(--text-primary); font-size:11px; text-align:right;">
+              </div>
+              <div style="margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:var(--text-secondary); width:35%; text-align:left;">Serial #${i}:</span>
+                <input type="text" class="hf-item-review-input" data-index="${i-1}" data-prop="serial" value="${item.serial || ''}" style="width:60%; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:4px; padding:3px 8px; color:var(--text-primary); font-size:11px; text-align:right;">
+              </div>
+            </div>
+          `;
+        }
+        rowsHtml += `</div>`;
+      }
 
       DOM.hfInteractivePanel.innerHTML = `
         <div style="text-align: left; background: rgba(255,255,255,0.03); padding:15px; border-radius: var(--border-radius-md); width:100%; max-width:450px; border: 1px solid var(--glass-border); max-height:250px; overflow-y:auto;">
@@ -870,9 +1563,23 @@ function updateHandsFreeWizardStepUI(state) {
             VoiceEngine.HandsFreeWizard.capturedData[key] = val.split(',').map(t => t.trim());
           } else if (key === 'value') {
             VoiceEngine.HandsFreeWizard.capturedData[key] = parseFloat(val) || 0;
+          } else if (key === 'quantity') {
+            const newQty = parseInt(val) || 1;
+            VoiceEngine.HandsFreeWizard.capturedData[key] = newQty;
+            updateHandsFreeWizardStepUI('CONFIRM');
           } else {
             VoiceEngine.HandsFreeWizard.capturedData[key] = val;
           }
+        });
+      });
+
+      const itemInputs = DOM.hfInteractivePanel.querySelectorAll('.hf-item-review-input');
+      itemInputs.forEach(input => {
+        input.addEventListener('input', (e) => {
+          const index = parseInt(e.target.getAttribute('data-index'));
+          const prop = e.target.getAttribute('data-prop');
+          const val = e.target.value;
+          VoiceEngine.HandsFreeWizard.capturedData.items[index][prop] = val;
         });
       });
       break;
@@ -1096,6 +1803,76 @@ function logout() {
 // 9. Page Event Listeners & Bootstrapping
 // ==========================================================================
 function bindEvents() {
+  // Checkout & Sales Event Bindings
+  if (DOM.checkoutAssetSelect) {
+    DOM.checkoutAssetSelect.addEventListener('change', handleCheckoutAssetChange);
+  }
+  if (DOM.checkoutResetBtn) {
+    DOM.checkoutResetBtn.addEventListener('click', resetCheckoutForm);
+  }
+  if (DOM.checkoutForm) {
+    DOM.checkoutForm.addEventListener('submit', handleCheckoutSubmit);
+  }
+  if (DOM.checkoutCartItems) {
+    DOM.checkoutCartItems.addEventListener('change', (e) => {
+      const target = e.target;
+      const baseName = target.getAttribute('data-base-name');
+      if (!baseName) return;
+
+      const item = AppState.checkoutCart.find(i => i.baseName === baseName);
+      if (!item) return;
+
+      if (target.classList.contains('cart-item-qty')) {
+        let qty = parseInt(target.value) || 1;
+        if (qty < 1) qty = 1;
+        if (qty > item.maxAvailable) qty = item.maxAvailable;
+        
+        // Resize salePrices array
+        if (qty > item.salePrices.length) {
+          for (let i = item.salePrices.length; i < qty; i++) {
+            const asset = item.allAssets[i];
+            item.salePrices.push(parseFloat(asset.value || 0));
+          }
+        } else if (qty < item.salePrices.length) {
+          item.salePrices = item.salePrices.slice(0, qty);
+        }
+
+        item.quantity = qty;
+        renderCheckoutCart();
+      } else if (target.classList.contains('cart-item-individual-price')) {
+        const index = parseInt(target.getAttribute('data-index'));
+        let price = parseFloat(target.value) || 0;
+        if (price < 0) price = 0;
+        item.salePrices[index] = price;
+        renderCheckoutCart();
+      }
+    });
+
+    DOM.checkoutCartItems.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('.cart-item-remove');
+      if (!removeBtn) return;
+
+      const baseName = removeBtn.getAttribute('data-base-name');
+      if (!baseName) return;
+
+      AppState.checkoutCart = AppState.checkoutCart.filter(i => i.baseName !== baseName);
+      renderCheckoutCart();
+      populateCheckoutAssetSelect();
+    });
+  }
+  if (DOM.salesSearch) {
+    DOM.salesSearch.addEventListener('input', renderSalesLedger);
+  }
+  if (DOM.exportSalesBtn) {
+    DOM.exportSalesBtn.addEventListener('click', handleExportSalesCSV);
+  }
+  if (DOM.receiptModalClose) {
+    DOM.receiptModalClose.addEventListener('click', closeReceiptModal);
+  }
+  if (DOM.receiptBtnRefund) {
+    DOM.receiptBtnRefund.addEventListener('click', handleUndoCheckout);
+  }
+
   // Navigation redirects
   DOM.headerAddBtn.addEventListener('click', () => { window.location.hash = '#register'; });
   DOM.emptyStateAddBtn.addEventListener('click', () => { window.location.hash = '#register'; });
@@ -1154,8 +1931,90 @@ function bindEvents() {
     document.body.removeChild(link);
   });
 
+  // Dynamic Quantity Itemized Fields Sync
+  const quantityInput = document.getElementById('form-quantity');
+  const dynamicContainer = document.getElementById('dynamic-items-container');
+  const dynamicList = document.getElementById('dynamic-items-list');
+
+  const updateDynamicFields = () => {
+    const qty = parseInt(quantityInput.value) || 1;
+    if (qty <= 1) {
+      dynamicContainer.classList.add('hidden');
+      dynamicList.innerHTML = '';
+      return;
+    }
+
+    dynamicContainer.classList.remove('hidden');
+    
+    const baseModel = document.getElementById('form-model').value;
+    const baseSerial = document.getElementById('form-serial').value;
+
+    let html = '';
+    for (let i = 1; i <= qty; i++) {
+      const existingModelInput = document.getElementById(`form-item-model-${i}`);
+      const existingSerialInput = document.getElementById(`form-item-serial-${i}`);
+      
+      const defaultModel = existingModelInput ? existingModelInput.value : (baseModel ? (i === 1 ? baseModel : `${baseModel}-${i}`) : '');
+      const defaultSerial = existingSerialInput ? existingSerialInput.value : (baseSerial ? (i === 1 ? baseSerial : `${baseSerial}-${i}`) : '');
+
+      html += `
+        <div class="form-row split" style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 10px; align-items: flex-end;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--color-accent); width: 100%; display: block; margin-bottom: 4px; text-transform: uppercase;">Item ${i} Details:</div>
+          <div class="form-field">
+            <label for="form-item-model-${i}">Model Number</label>
+            <div class="input-wrapper">
+              <input type="text" id="form-item-model-${i}" class="dynamic-item-model" placeholder="e.g. A2991" value="${defaultModel}">
+              <div class="glow-indicator"></div>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="form-item-serial-${i}">Serial / Asset Tag</label>
+            <div class="input-wrapper">
+              <input type="text" id="form-item-serial-${i}" class="dynamic-item-serial" placeholder="e.g. SN-A982H2K" value="${defaultSerial}">
+              <div class="glow-indicator"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    dynamicList.innerHTML = html;
+  };
+
+  quantityInput.addEventListener('input', updateDynamicFields);
+  document.getElementById('form-model').addEventListener('input', () => {
+    const qty = parseInt(quantityInput.value) || 1;
+    if (qty > 1) {
+      const baseModel = document.getElementById('form-model').value;
+      for (let i = 1; i <= qty; i++) {
+        const input = document.getElementById(`form-item-model-${i}`);
+        if (input && !input.dataset.userEdited) {
+          input.value = baseModel ? (i === 1 ? baseModel : `${baseModel}-${i}`) : '';
+        }
+      }
+    }
+  });
+  document.getElementById('form-serial').addEventListener('input', () => {
+    const qty = parseInt(quantityInput.value) || 1;
+    if (qty > 1) {
+      const baseSerial = document.getElementById('form-serial').value;
+      for (let i = 1; i <= qty; i++) {
+        const input = document.getElementById(`form-item-serial-${i}`);
+        if (input && !input.dataset.userEdited) {
+          input.value = baseSerial ? (i === 1 ? baseSerial : `${baseSerial}-${i}`) : '';
+        }
+      }
+    }
+  });
+
+  dynamicList.addEventListener('input', (e) => {
+    if (e.target.classList.contains('dynamic-item-model') || e.target.classList.contains('dynamic-item-serial')) {
+      e.target.dataset.userEdited = 'true';
+    }
+  });
+
   // Forms interactions
   setupDropzone();
+  setupPresetPhotos();
   DOM.micBtn.addEventListener('click', toggleDictation);
   
   DOM.formReset.addEventListener('click', () => {
@@ -1170,27 +2029,73 @@ function bindEvents() {
     DOM.dictationBox.innerHTML = '<span class="transcript-placeholder">Click microphone above and speak description to fill details...</span>';
     DOM.aiExtractStatus.textContent = 'Waiting for input';
     DOM.aiExtractStatus.className = 'form-mode-badge';
+    dynamicContainer.classList.add('hidden');
+    dynamicList.innerHTML = '';
+    
+    // Reset preset card styling
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+    
+    // Clear custom user edited states
+    document.querySelectorAll('#asset-reg-form input, #asset-reg-form textarea').forEach(input => {
+      delete input.dataset.userEdited;
+    });
   });
 
   DOM.regForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    const payload = {
-      name: document.getElementById('form-name').value,
-      category: document.getElementById('form-category').value,
-      value: parseFloat(document.getElementById('form-value').value),
-      manufacturer: document.getElementById('form-manufacturer').value || null,
-      model: document.getElementById('form-model').value || null,
-      condition: document.getElementById('form-condition').value,
-      status: document.getElementById('form-status').value,
-      location: document.getElementById('form-location').value || 'Storage A',
-      serial: document.getElementById('form-serial').value || null,
-      tags: document.getElementById('form-tags').value ? document.getElementById('form-tags').value.split(',').map(t => t.trim()) : [],
-      notes: document.getElementById('form-notes').value || '',
-      image: AppState.selectedImageBase64 || DB.getAllAssets()[0].image // fallback to macbook seed if no upload
-    };
+    const qty = parseInt(document.getElementById('form-quantity').value) || 1;
+    const baseName = document.getElementById('form-name').value;
+    const category = document.getElementById('form-category').value;
+    const value = parseFloat(document.getElementById('form-value').value);
+    const manufacturer = document.getElementById('form-manufacturer').value || null;
+    const baseModel = document.getElementById('form-model').value || null;
+    const condition = document.getElementById('form-condition').value;
+    const status = document.getElementById('form-status').value;
+    const location = document.getElementById('form-location').value || 'Storage A';
+    const baseSerial = document.getElementById('form-serial').value || null;
+    const tags = document.getElementById('form-tags').value ? document.getElementById('form-tags').value.split(',').map(t => t.trim()) : [];
+    const notes = document.getElementById('form-notes').value || '';
+    const image = AppState.selectedImageBase64 || (DB.getAllAssets().length > 0 ? DB.getAllAssets()[0].image : 'assets/macbook.png');
 
-    DB.saveAsset(payload);
+    if (qty <= 1) {
+      const payload = {
+        name: baseName,
+        category,
+        value,
+        manufacturer,
+        model: baseModel,
+        condition,
+        status,
+        location,
+        serial: baseSerial,
+        tags,
+        notes,
+        image
+      };
+      DB.saveAsset(payload);
+    } else {
+      for (let i = 1; i <= qty; i++) {
+        const itemModel = document.getElementById(`form-item-model-${i}`).value || baseModel;
+        const itemSerial = document.getElementById(`form-item-serial-${i}`).value || baseSerial;
+        
+        const payload = {
+          name: `${baseName} (${i}/${qty})`,
+          category,
+          value,
+          manufacturer,
+          model: itemModel,
+          condition,
+          status,
+          location,
+          serial: itemSerial,
+          tags,
+          notes,
+          image
+        };
+        DB.saveAsset(payload);
+      }
+    }
     
     // Soft redirection to catalog after save
     DOM.formReset.click();

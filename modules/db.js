@@ -30,7 +30,7 @@ const SEED_ASSETS = [
     serial: 'SN-APL982K11',
     tags: ['laptop', 'hardware', 'executive', 'silicon'],
     notes: 'CTO primary machine. Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD. AppleCare coverage active till May 2028.',
-    image: SVG_ASSETS.macbook,
+    image: 'assets/macbook.png',
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -46,7 +46,7 @@ const SEED_ASSETS = [
     serial: 'SN-HA-88291A',
     tags: ['furniture', 'ergonomic', 'office', 'studio'],
     notes: 'Premium posture correction chair with adjustable armrests and mesh backing. Back support tension re-calibrated in early 2026.',
-    image: SVG_ASSETS.chair,
+    image: 'assets/chair.png',
     createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -62,7 +62,7 @@ const SEED_ASSETS = [
     serial: 'SN-SO-FX3-9921',
     tags: ['camera', 'media', 'video', 'production'],
     notes: 'Full-frame Cinema line camera. Used for marketing campaigns and tutorials. Stored in moisture-controlled case with 50mm f/1.2 lens.',
-    image: SVG_ASSETS.camera,
+    image: 'assets/camera.png',
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -78,7 +78,7 @@ const SEED_ASSETS = [
     serial: 'SN-VRX-7762A',
     tags: ['vr', 'hardware', 'spatial', 'testing'],
     notes: 'Used by the spatial software development team. Checked out by Lead Architect. Calibrated for 90Hz eye-tracking.',
-    image: SVG_ASSETS.headset,
+    image: 'assets/headset.png',
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -94,7 +94,7 @@ const SEED_ASSETS = [
     serial: 'SN-OP-5000-B3',
     tags: ['lab', 'microscope', 'research', 'optical'],
     notes: 'Digital optical microscope with 5000x magnification and USB capture output. Scheduled for lens cleaning and sensor calibration next Monday.',
-    image: SVG_ASSETS.microscope,
+    image: 'assets/microscope.png',
     createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
   }
 ];
@@ -137,6 +137,7 @@ export const DB = {
   _assetsCache: [],
   _activitiesCache: [],
   _usersCache: [],
+  _salesCache: [],
 
   // Sync cache records from Python + MongoDB backend on startup
   async init() {
@@ -167,12 +168,21 @@ export const DB = {
         throw new Error("Unable to sync activities collection");
       }
 
+      // 4. Load sales
+      const salesResponse = await fetch('/api/sales');
+      if (salesResponse.ok) {
+        this._salesCache = await salesResponse.json();
+      } else {
+        throw new Error("Unable to sync sales collection");
+      }
+
       console.log("Local caches synced successfully with MongoDB.");
     } catch (e) {
       console.error("Local database init failed. Using standalone memory fallback.", e);
       // Failover to client local cache logic
       this._assetsCache = SEED_ASSETS;
       this._activitiesCache = SEED_ACTIVITIES;
+      this._salesCache = [];
       this._usersCache = [
         { username: 'admin', password: 'admin', role: 'admin', name: 'Admin Portal' },
         { username: 'user', password: 'user', role: 'staff', name: 'Staff Registry' }
@@ -221,13 +231,15 @@ export const DB = {
   },
 
   // Delete asset write-through
-  deleteAsset(id) {
+  deleteAsset(id, silent = false) {
     const index = this._assetsCache.findIndex(a => a.id === id);
     if (index > -1) {
       const asset = this._assetsCache[index];
       this._assetsCache.splice(index, 1); // remove from local cache list
       
-      this.logActivity('del', `Asset <strong>${asset.name}</strong> removed from catalog.`);
+      if (!silent) {
+        this.logActivity('del', `Asset <strong>${asset.name}</strong> removed from catalog.`);
+      }
       
       // Delete from MongoDB database asynchronously
       fetch(`/api/assets/${id}`, {
@@ -274,11 +286,61 @@ export const DB = {
     return newActivity;
   },
 
+  // Get all sales
+  getAllSales() {
+    return this._salesCache;
+  },
+
+  // Save sales record
+  saveSale(sale) {
+    const isNew = !sale.id;
+    if (isNew) {
+      sale.id = `SALE-${Math.floor(10000 + Math.random() * 90000)}`;
+      sale.soldDate = new Date().toISOString();
+    }
+
+    const existingIndex = this._salesCache.findIndex(s => s.id === sale.id);
+    if (existingIndex > -1) {
+      this._salesCache[existingIndex] = { ...this._salesCache[existingIndex], ...sale };
+    } else {
+      this._salesCache.unshift(sale);
+    }
+
+    // Write-through to MongoDB
+    fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sale)
+    }).catch(e => {
+      console.error("MongoDB async saveSale fail:", e);
+    });
+
+    return sale;
+  },
+
+  // Delete sale (Refund)
+  deleteSale(id) {
+    const index = this._salesCache.findIndex(s => s.id === id);
+    if (index > -1) {
+      this._salesCache.splice(index, 1);
+      
+      // Delete from MongoDB
+      fetch(`/api/sales/${id}`, {
+        method: 'DELETE'
+      }).catch(e => {
+        console.error("MongoDB async deleteSale fail:", e);
+      });
+      return true;
+    }
+    return false;
+  },
+
   // Purge database from server and reset app
   async purgeDB() {
     this._assetsCache = [];
     this._activitiesCache = [];
     this._usersCache = [];
+    this._salesCache = [];
     
     try {
       await fetch('/api/purge', { method: 'POST' });

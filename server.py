@@ -44,6 +44,7 @@ except Exception as e:
             self.assets = MockCollection()
             self.activities = MockCollection()
             self.users = MockCollection()
+            self.sales = MockCollection()
     db = MockDB()
     print("Warning: Running with fallback in-memory mock database.")
 
@@ -71,7 +72,7 @@ SEED_ASSETS = [
         "serial": "SN-APL982K11",
         "tags": ["laptop", "hardware", "executive", "silicon"],
         "notes": "CTO primary machine. Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD. AppleCare coverage active till May 2028.",
-        "image": SVG_ASSETS["macbook"],
+        "image": "assets/macbook.png",
         "createdAt": datetime.utcnow().isoformat() + "Z"
     },
     {
@@ -87,7 +88,7 @@ SEED_ASSETS = [
         "serial": "SN-HA-88291A",
         "tags": ["furniture", "ergonomic", "office", "studio"],
         "notes": "Premium posture correction chair with adjustable armrests and mesh backing. Back support tension re-calibrated in early 2026.",
-        "image": SVG_ASSETS["chair"],
+        "image": "assets/chair.png",
         "createdAt": datetime.utcnow().isoformat() + "Z"
     },
     {
@@ -103,7 +104,7 @@ SEED_ASSETS = [
         "serial": "SN-SO-FX3-9921",
         "tags": ["camera", "media", "video", "production"],
         "notes": "Full-frame Cinema line camera. Used for marketing campaigns and tutorials. Stored in moisture-controlled case with 50mm f/1.2 lens.",
-        "image": SVG_ASSETS["camera"],
+        "image": "assets/camera.png",
         "createdAt": datetime.utcnow().isoformat() + "Z"
     },
     {
@@ -119,7 +120,7 @@ SEED_ASSETS = [
         "serial": "SN-VRX-7762A",
         "tags": ["vr", "hardware", "spatial", "testing"],
         "notes": "Used by the spatial software development team. Checked out by Lead Architect. Calibrated for 90Hz eye-tracking.",
-        "image": SVG_ASSETS["headset"],
+        "image": "assets/headset.png",
         "createdAt": datetime.utcnow().isoformat() + "Z"
     },
     {
@@ -135,7 +136,7 @@ SEED_ASSETS = [
         "serial": "SN-OP-5000-B3",
         "tags": ["lab", "microscope", "research", "optical"],
         "notes": "Digital optical microscope with 5000x magnification and USB capture output. Scheduled for lens cleaning and sensor calibration next Monday.",
-        "image": SVG_ASSETS["microscope"],
+        "image": "assets/microscope.png",
         "createdAt": datetime.utcnow().isoformat() + "Z"
     }
 ]
@@ -199,6 +200,18 @@ def seed_data():
         if db.assets.count_documents({}) == 0:
             db.assets.insert_many(SEED_ASSETS)
             print("Assets database seeded successfully in INR.")
+        
+        # Migration: update existing phone items using placeholder phone SVG to use the new local smartphone photo
+        try:
+            if hasattr(db.assets, 'update_many'):
+                result = db.assets.update_many(
+                    {"image": {"$regex": "^data:image/svg.*gPhone.*"}},
+                    {"$set": {"image": "assets/smartphone.png"}}
+                )
+                if result.modified_count > 0:
+                    print(f"Migration: Updated {result.modified_count} phone assets to local photo path.")
+        except Exception as mig_err:
+            print(f"Migration warning: {mig_err}")
             
         if db.activities.count_documents({}) == 0:
             db.activities.insert_many(SEED_ACTIVITIES)
@@ -341,6 +354,49 @@ def save_activity():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Get all sales records
+@app.route('/api/sales', methods=['GET'])
+def get_sales():
+    try:
+        sales = list(db.sales.find())
+        sales.sort(key=lambda x: x.get('soldDate', ''), reverse=True)
+        for s in sales:
+            s['_id'] = str(s['_id'])
+        return jsonify(sales)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Save a sales record (write-through API)
+@app.route('/api/sales', methods=['POST'])
+def save_sale():
+    try:
+        sale = request.json
+        sale_id = sale.get('id')
+        
+        if not sale_id:
+            sale_id = f"SALE-{random.randint(10000, 99999)}"
+            sale['id'] = sale_id
+            sale['soldDate'] = datetime.utcnow().isoformat() + "Z"
+            
+        if '_id' in sale:
+            del sale['_id']
+            
+        db.sales.replace_one({"id": sale_id}, sale, upsert=True)
+        return jsonify(sale)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Delete a sales record (refund/undo)
+@app.route('/api/sales/<sale_id>', methods=['DELETE'])
+def delete_sale(sale_id):
+    try:
+        result = db.sales.delete_one({"id": sale_id})
+        if result.deleted_count > 0:
+            return jsonify({"success": True})
+        return jsonify({"success": False, "message": "Sale record not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Purge and reload
 @app.route('/api/purge', methods=['POST'])
 def purge_database():
@@ -348,6 +404,7 @@ def purge_database():
         db.assets.delete_many({})
         db.activities.delete_many({})
         db.users.delete_many({})
+        db.sales.delete_many({})
         seed_data()
         return jsonify({"success": True})
     except Exception as e:
