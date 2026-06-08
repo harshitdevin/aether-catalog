@@ -106,6 +106,10 @@ const DOM = {
   globalMicPulse: document.getElementById('global-mic-pulse'),
   globalSpeechIntent: document.getElementById('global-speech-intent-box'),
   globalIntentText: document.getElementById('global-intent-text'),
+  speechTextForm: document.getElementById('global-speech-text-form'),
+  speechTextInput: document.getElementById('global-speech-text-input'),
+  speechAnswerContainer: document.getElementById('global-speech-answer-container'),
+  speechAnswerText: document.getElementById('global-speech-answer-text'),
 
   // Authentication Gateway Elements
   loginScreen: document.getElementById('login-screen'),
@@ -1652,13 +1656,18 @@ function openQuickVoiceOverlay() {
   DOM.speechModal.classList.remove('hidden');
   DOM.speechModal.classList.add('active-mic');
   DOM.globalSpeechStatus.textContent = 'Aether Voice Assistant listening...';
-  DOM.globalSpeechLiveBox.textContent = 'Say a search command (e.g. "Show chairs") or log asset command.';
+  DOM.globalSpeechLiveBox.textContent = 'Say a search command (e.g. "Show chairs") or ask any question about inventory & sales.';
   
+  // Reset response box and input
+  if (DOM.speechAnswerContainer) DOM.speechAnswerContainer.classList.add('hidden');
+  if (DOM.speechAnswerText) DOM.speechAnswerText.textContent = '';
+  if (DOM.speechTextInput) DOM.speechTextInput.value = '';
+
   VoiceEngine.listenOnce(
     (result) => {
       if (result.final) {
         DOM.globalSpeechLiveBox.textContent = `"${result.final}"`;
-        executeGlobalVoiceQuery(result.final);
+        processAetherQuery(result.final);
       } else if (result.interim) {
         DOM.globalSpeechLiveBox.textContent = result.interim;
       }
@@ -1668,7 +1677,7 @@ function openQuickVoiceOverlay() {
     },
     (err) => {
       console.error(err);
-      closeQuickVoiceOverlay();
+      DOM.globalSpeechStatus.textContent = 'Microphone idle. You can also type your query below.';
     }
   );
 }
@@ -1678,84 +1687,87 @@ function closeQuickVoiceOverlay() {
   DOM.speechModal.classList.remove('active-mic');
 }
 
-function executeGlobalVoiceQuery(query) {
-  // Strip trailing punctuation like full stops, question marks, and exclamation marks
-  const clean = query.toLowerCase().replace(/[\.\?\!\s]+$/, '').trim();
+async function processAetherQuery(query) {
+  if (!query || !query.trim()) return;
+
+  DOM.globalSpeechStatus.textContent = 'Aether is thinking...';
   DOM.globalSpeechIntent.classList.remove('hidden');
-  DOM.globalIntentText.textContent = 'Analyzing speech intent...';
+  DOM.globalIntentText.textContent = 'Analyzing query...';
   
-  setTimeout(() => {
-    DOM.globalSpeechIntent.classList.add('hidden');
-    closeQuickVoiceOverlay();
+  if (DOM.speechAnswerContainer) {
+    DOM.speechAnswerContainer.classList.add('hidden');
+  }
+
+  try {
+    const assets = DB.getAllAssets();
+    const sales = DB.getAllSales();
+    const result = await AIClient.askAether(query, assets, sales);
     
-    // Speech command router
-    if (clean.includes('show') || clean.includes('filter') || clean.includes('find') || clean.includes('search')) {
-      // Check query keyword filters
-      let filterCategory = 'all';
-      let searchVal = '';
-      
-      if (clean.includes('laptop') || clean.includes('computer') || clean.includes('electronics')) {
-        filterCategory = 'Electronics';
-      } else if (clean.includes('chair') || clean.includes('desk') || clean.includes('office')) {
-        filterCategory = 'Office Gear';
-      } else if (clean.includes('camera') || clean.includes('lens') || clean.includes('media')) {
-        filterCategory = 'Media Equipment';
-      }
-
-      // Exact phrase extraction
-      const parts = clean.split(/\b(?:show|filter|find|search)\b/i);
-      if (parts.length > 1) {
-        searchVal = parts[1].replace(/(?:laptops|chairs|cameras|assets|category|electronics|office gear|media equipment)/g, '').trim();
-        searchVal = searchVal.replace(/^\b(?:for|me|the|a|an)\b/gi, '').trim();
-      }
-
-      // Redirect to catalog page and apply parameters
-      window.location.hash = '#catalog';
-      setTimeout(() => {
-        DOM.filterCat.value = filterCategory;
-        DOM.catalogSearch.value = searchVal;
-        renderCatalog();
-        
-        if (DOM.prefTTS.checked) {
-          VoiceEngine.speak(`Displaying inventory filtered by ${filterCategory} and keyword ${searchVal}`);
-        }
-      }, 200);
-      
-    } else if (clean.includes('add') || clean.includes('register') || clean.includes('create') || clean.includes('log')) {
-      // Redirect to Register Form and populate conversational NLP parameters
-      window.location.hash = '#register';
-      setTimeout(() => {
-        DOM.dictationBox.innerHTML = highlightTranscriptKeywords(query);
-        processParsedVocalInput(query);
-      }, 200);
-      
-    } else if (clean.includes('dashboard') || clean.includes('center') || clean.includes('stats')) {
-      window.location.hash = '#dashboard';
-      if (DOM.prefTTS.checked) VoiceEngine.speak("Loading central analytics command center.");
-    } else if (clean.includes('hands free') || clean.includes('wizard') || clean.includes('guided')) {
-      window.location.hash = '#handsfree';
-      if (DOM.prefTTS.checked) VoiceEngine.speak("Activating guided warehouse hands free mode.");
-    } else {
-      // Default fallback: treat as a catalog search query
-      const searchVal = clean.replace(/^\b(?:for|me|the|a|an)\b/gi, '').trim();
-      if (searchVal) {
-        window.location.hash = '#catalog';
-        setTimeout(() => {
-          DOM.filterCat.value = 'all';
-          DOM.catalogSearch.value = searchVal;
-          renderCatalog();
+    // Hide spinner
+    DOM.globalSpeechIntent.classList.add('hidden');
+    DOM.globalSpeechStatus.textContent = 'Response ready';
+    
+    // Render answer in modal
+    if (DOM.speechAnswerText && DOM.speechAnswerContainer) {
+      DOM.speechAnswerText.textContent = result.answer;
+      DOM.speechAnswerContainer.classList.remove('hidden');
+    }
+    
+    // Text to speech speak
+    if (DOM.prefTTS.checked) {
+      VoiceEngine.speak(result.answer);
+    }
+    
+    // Execute action
+    if (result.action && result.action.type !== 'none') {
+      const act = result.action;
+      if (act.type === 'redirect') {
+        const targetView = act.target;
+        if (targetView && targetView !== 'none') {
+          window.location.hash = `#${targetView}`;
           
-          if (DOM.prefTTS.checked) {
-            VoiceEngine.speak(`Searching catalog for ${searchVal}`);
+          setTimeout(() => {
+            if (targetView === 'catalog') {
+              if (act.filterCategory) {
+                DOM.filterCat.value = act.filterCategory;
+              }
+              if (act.searchQuery !== undefined) {
+                DOM.catalogSearch.value = act.searchQuery;
+                DOM.globalSearch.value = act.searchQuery;
+              }
+              renderCatalog();
+            } else if (targetView === 'sales') {
+              if (act.searchQuery !== undefined) {
+                DOM.salesSearch.value = act.searchQuery;
+              }
+              renderSalesLedger();
+            }
+          }, 300);
+        }
+      } else if (act.type === 'select_asset') {
+        if (act.target && act.target !== 'none') {
+          closeQuickVoiceOverlay();
+          openDetailModal(act.target);
+        }
+      } else if (act.type === 'view_sale') {
+        if (act.target && act.target !== 'none') {
+          const sale = DB.getAllSales().find(s => s.id === act.target);
+          if (sale) {
+            closeQuickVoiceOverlay();
+            openReceiptModal(sale);
           }
-        }, 200);
-      } else {
-        if (DOM.prefTTS.checked) {
-          VoiceEngine.speak("Voice query completed. Command unrecognized.");
         }
       }
     }
-  }, 1200);
+  } catch (error) {
+    console.error("Aether query error:", error);
+    DOM.globalSpeechIntent.classList.add('hidden');
+    DOM.globalSpeechStatus.textContent = 'Error processing query';
+    if (DOM.speechAnswerText && DOM.speechAnswerContainer) {
+      DOM.speechAnswerText.textContent = "Sorry, I encountered an error. Make sure your Gemini API key is configured correctly.";
+      DOM.speechAnswerContainer.classList.remove('hidden');
+    }
+  }
 }
 
 // ==========================================================================
@@ -1942,6 +1954,17 @@ function bindEvents() {
   // Global quick voice button
   DOM.quickVoiceBtn.addEventListener('click', openQuickVoiceOverlay);
   DOM.speechModalClose.addEventListener('click', closeQuickVoiceOverlay);
+
+  // Keyboard text submit listener for Aether modal
+  if (DOM.speechTextForm) {
+    DOM.speechTextForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = DOM.speechTextInput.value;
+      if (q && q.trim()) {
+        processAetherQuery(q);
+      }
+    });
+  }
 
   // Detail Modal Close
   DOM.detailsClose.addEventListener('click', closeDetailModal);

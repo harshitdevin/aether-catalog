@@ -378,5 +378,203 @@ export const AIClient = {
       tags,
       notes
     };
+  },
+
+  // Conversational Aether Assistant Chat
+  async askAether(query, assets, sales) {
+    const apiKey = this.getApiKey();
+    if (apiKey) {
+      return this.executeLiveAetherChat(apiKey, query, assets, sales);
+    } else {
+      return this.executeSimulatedAetherChat(query, assets, sales);
+    }
+  },
+
+  async executeLiveAetherChat(apiKey, query, assets, sales) {
+    const requestUrl = `${API_URL_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    
+    // Clean data slightly to prevent payload size bloat (exclude raw base64 images from assets/sales data passed to LLM)
+    const leanAssets = assets.map(a => ({
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      value: a.value,
+      manufacturer: a.manufacturer,
+      model: a.model,
+      condition: a.condition,
+      status: a.status,
+      location: a.location,
+      serial: a.serial,
+      tags: a.tags,
+      notes: a.notes,
+      createdAt: a.createdAt
+    }));
+
+    const leanSales = sales.map(s => ({
+      id: s.id,
+      assetId: s.assetId,
+      assetName: s.assetName,
+      category: s.category,
+      manufacturer: s.manufacturer,
+      model: s.model,
+      serial: s.serial,
+      costValue: s.costValue,
+      salePrice: s.salePrice,
+      profit: s.profit,
+      soldDate: s.soldDate,
+      soldTo: s.soldTo,
+      notes: s.notes
+    }));
+
+    const chatInstruction = `
+    You are Aether, the intelligent voice and text assistant for AetherCatalog (an inventory management and sales registry system).
+    You have access to the active catalog database (assets) and the sales ledger (sales).
+    Your task is to answer the user's question based strictly on the provided JSON data.
+
+    ACTIVE ASSETS in Inventory:
+    \n${JSON.stringify(leanAssets)}\n
+
+    SALES RECORD LEDGER:
+    \n${JSON.stringify(leanSales)}\n
+
+    Provide a helpful, concise response. Focus on giving direct answers (totals, specific locations, serials, sales amounts, or calculations).
+    Keep the response brief (1-3 sentences) suitable for being read aloud.
+    Do not reference database keys like "_id". Use user-friendly terms (e.g. refer to assets by their names, specify prices in INR with the ₹ symbol).
+    If the user asks to filter/show/search/select something, suggest a UI action.
+    Return a strict, clean JSON object matching this schema (do not include any explanation or markdown formatting like \`\`\`json):
+    {
+      "answer": "The text answer to be read aloud and displayed to the user.",
+      "action": {
+        "type": "redirect | select_asset | view_sale | none",
+        "target": "dashboard | catalog | checkout | sales | settings | <asset_id> | <sale_id> | none",
+        "searchQuery": "optional keyword to put in the search bar if redirecting to catalog/sales",
+        "filterCategory": "optional category name to select if redirecting to catalog"
+      }
+    }
+    `;
+
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: `${chatInstruction}\n\nUser Question: "${query}"`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    };
+
+    try {
+      const response = await fetch(requestUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      
+      let cleanJsonText = rawText.trim();
+      if (cleanJsonText.startsWith('```')) {
+        cleanJsonText = cleanJsonText.replace(/^```(?:json)?/, '').replace(/```$/, '').trim();
+      }
+
+      return JSON.parse(cleanJsonText);
+    } catch (error) {
+      console.error("Aether Chat live request failed, falling back to simulation:", error);
+      return this.executeSimulatedAetherChat(query, assets, sales);
+    }
+  },
+
+  executeSimulatedAetherChat(query, assets, sales) {
+    return new Promise((resolve) => {
+      // Simulate real AI network lag of 1.2 seconds
+      setTimeout(() => {
+        const clean = query.toLowerCase().trim();
+        let answer = "I couldn't find a specific answer in the local data. Try asking about total valuation, category details, or sales revenue.";
+        let action = { type: "none", target: "none" };
+
+        // 1. Check for valuation/category metrics
+        if (clean.includes('valuation') || clean.includes('total value') || clean.includes('worth') || clean.includes('portfolio')) {
+          const totalVal = assets.reduce((sum, a) => sum + parseFloat(a.value || 0), 0);
+          const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalVal);
+          answer = `The total estimated valuation of all assets in your inventory is ${formatted}.`;
+          action = { type: "redirect", target: "dashboard" };
+        } else if (clean.includes('revenue') || clean.includes('sales revenue') || clean.includes('total sales') || clean.includes('gross sales')) {
+          const totalRev = sales.reduce((sum, s) => sum + parseFloat(s.salePrice || 0), 0);
+          const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalRev);
+          answer = `Your gross sales revenue is ${formatted} from ${sales.length} transactions.`;
+          action = { type: "redirect", target: "sales" };
+        } else if (clean.includes('profit') || clean.includes('net profit') || clean.includes('margin')) {
+          const totalProfit = sales.reduce((sum, s) => sum + parseFloat(s.profit || 0), 0);
+          const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalProfit);
+          answer = `Your net profit across all sales is ${formatted}.`;
+          action = { type: "redirect", target: "sales" };
+        } else if (clean.includes('sold items') || clean.includes('how many items sold') || clean.includes('quantity sold')) {
+          answer = `You have sold a total of ${sales.length} items.`;
+          action = { type: "redirect", target: "sales" };
+        } else if (clean.includes('expensive') || clean.includes('highest value') || clean.includes('costliest')) {
+          if (assets.length > 0) {
+            const sorted = [...assets].sort((a, b) => parseFloat(b.value || 0) - parseFloat(a.value || 0));
+            const top = sorted[0];
+            const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(top.value || 0);
+            answer = `The most expensive asset is the "${top.name}" valued at ${formatted}, located in "${top.location || 'N/A'}".`;
+            action = { type: "select_asset", target: top.id };
+          } else {
+            answer = "There are no assets catalogued in the database currently.";
+          }
+        } else if (clean.includes('location of') || clean.includes('where is')) {
+          // Find asset
+          const found = assets.find(a => clean.includes(a.name.toLowerCase()) || (a.serial && clean.includes(a.serial.toLowerCase())));
+          if (found) {
+            answer = `The ${found.name} (Serial: ${found.serial || 'N/A'}) is located in the ${found.location || 'Storage'}. Its condition is ${found.condition || 'Good'}.`;
+            action = { type: "select_asset", target: found.id };
+          } else {
+            answer = "I couldn't find a matching active asset in the database. Try searching for MacBook, Chair, Camera, or a specific serial.";
+          }
+        } else if (clean.includes('show') || clean.includes('find') || clean.includes('search') || clean.includes('filter')) {
+          // Identify category
+          let filterCategory = 'all';
+          let searchQuery = '';
+          if (clean.includes('electronics') || clean.includes('laptop') || clean.includes('phone') || clean.includes('headset')) {
+            filterCategory = 'Electronics';
+          } else if (clean.includes('office') || clean.includes('chair') || clean.includes('furniture')) {
+            filterCategory = 'Office Gear';
+          } else if (clean.includes('camera') || clean.includes('media') || clean.includes('video')) {
+            filterCategory = 'Media Equipment';
+          } else if (clean.includes('lab') || clean.includes('microscope')) {
+            filterCategory = 'Laboratory';
+          }
+          
+          // Extract search query keyword
+          const keywords = clean.split(/\b(?:show|find|search|filter)\b/i);
+          if (keywords.length > 1) {
+            searchQuery = keywords[1].replace(/(?:laptops|chairs|cameras|assets|category|electronics|office gear|media equipment|laboratory)/g, '').replace(/^\b(?:for|me|the|a|an)\b/gi, '').trim();
+          }
+          answer = `Displaying catalog filtered by category ${filterCategory} and keyword "${searchQuery}".`;
+          action = { type: "redirect", target: "catalog", searchQuery, filterCategory };
+        } else if (clean.includes('customer') || clean.includes('who bought') || clean.includes('sale to')) {
+          const foundSale = sales.find(s => clean.includes(s.soldTo.toLowerCase()));
+          if (foundSale) {
+            const formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(foundSale.salePrice || 0);
+            answer = `${foundSale.soldTo} purchased the "${foundSale.assetName}" on ${new Date(foundSale.soldDate).toLocaleDateString()} for ${formatted}.`;
+            action = { type: "view_sale", target: foundSale.id, searchQuery: foundSale.soldTo };
+          } else {
+            answer = "I couldn't find a transaction matching that customer name.";
+          }
+        }
+
+        resolve({ answer, action });
+      }, 1200);
+    });
   }
 };
+

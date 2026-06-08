@@ -2596,4 +2596,9 @@ body.role-staff .admin-only {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-
+/* Ask Aether Modal Text Input styling */
+#global-speech-text-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+}
