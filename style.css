@@ -2602,3 +2602,476 @@ body.role-staff .admin-only {
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
   background: rgba(0, 0, 0, 0.4);
 }
+
+/* Autocomplete suggestions dropdown styling */
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+  margin-top: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: var(--transition-fast);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover, .suggestion-item.active {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--color-accent);
+}
+
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.suggestion-model {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.suggestion-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.suggestion-category {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(6, 182, 212, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--color-accent);
+}
+
+.suggestion-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+/* Console tab system styling */
+.console-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 10px;
+}
+
+.console-tab {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-tab:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+}
+
+.console-tab.active {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+}
+
+.tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: opacity 0.3s ease;
+}
+
+.tab-pane.hidden {
+  display: none !important;
+}
+
+/* Webcam Scanning Module styling */
+.webcam-container {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  height: 300px;
+  margin: 0 auto 15px auto;
+  border-radius: var(--border-radius-lg);
+  border: 2px solid var(--glass-border);
+  background: #020617;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+#webcam-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#webcam-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.webcam-placeholder {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 20px;
+  z-index: 2;
+}
+
+.webcam-icon {
+  color: var(--text-muted);
+  animation: float 3s ease-in-out infinite;
+}
+
+.webcam-placeholder h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.webcam-placeholder p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 260px;
+}
+
+.webcam-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 5px;
+}
+
+.webcam-status-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.webcam-status-label.active {
+  color: var(--color-accent);
+}
+
+.webcam-status-label.success {
+  color: var(--color-success);
+}
+
+.webcam-learned-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.learned-item-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.25s ease;
+}
+
+.learned-item-badge .bullet {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.learned-item-badge.active {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+}
+
+/* Webcam Scan Review Card styles */
+.webcam-review-card {
+  padding: 18px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.webcam-review-card .review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.webcam-review-card .review-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.webcam-review-card .review-body {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.webcam-review-card .review-preview-pane {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border);
+  background: #020617;
+  overflow: hidden;
+}
+
+.webcam-review-card .review-preview-pane img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webcam-review-card .review-details-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.webcam-review-card .review-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  padding-bottom: 3px;
+}
+
+.webcam-review-card .review-row .label {
+  color: var(--text-secondary);
+}
+
+.webcam-review-card .review-row .value {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.webcam-review-card .review-footer-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Scanned Items Cart Styles */
+.cart-item-row {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+  padding: 10px;
+  transition: all 0.2s ease;
+}
+
+.cart-item-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(6, 182, 212, 0.25);
+  transform: translateY(-1px);
+}
+
+.cart-item-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  background: #020617;
+}
+
+.cart-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cart-item-info h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-info span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-item-price-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-accent);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.cart-item-price-input {
+  width: 75px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  text-align: right;
+}
+
+.cart-item-price-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.25);
+}
+
+.cart-item-qty-input {
+  width: 45px;
+  padding: 4px 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  text-align: center;
+}
+
+.cart-item-qty-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.25);
+}
+
+.btn-cart-remove {
+  background: none;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+}
+
+.btn-cart-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  opacity: 1;
+}
+
+.scanner-reticle {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 2px dashed rgba(6, 182, 212, 0.5);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15), inset 0 0 15px rgba(6, 182, 212, 0.15);
+  pointer-events: none;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 182, 212, 0.02);
+  transition: all 0.3s ease;
+}
+
+.scanner-reticle::before {
+  content: "ALIGN OBJECT HERE";
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(6, 182, 212, 0.75);
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  letter-spacing: 1.5px;
+}

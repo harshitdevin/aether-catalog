@@ -437,99 +437,195 @@
             <div class="capture-hub glassmorphic">
               <h3 class="card-title">Multimodal Intake Console</h3>
               
-              <!-- Drop Zone -->
-              <div class="upload-dropzone" id="image-dropzone">
-                <input type="file" id="asset-image-input" accept="image/*" class="hidden-file-input">
+              <div class="console-tabs">
+                <button type="button" class="console-tab active" id="tab-upload">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Upload & Presets
+                </button>
+                <button type="button" class="console-tab" id="tab-webcam">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  Live Webcam Scan
+                </button>
+              </div>
+
+              <!-- Tab content 1: Upload & Voice -->
+              <div class="tab-pane active" id="pane-upload">
+                <!-- Drop Zone -->
+                <div class="upload-dropzone" id="image-dropzone">
+                  <input type="file" id="asset-image-input" accept="image/*" class="hidden-file-input">
+                  
+                  <div class="dropzone-prompt" id="dropzone-prompt-box">
+                    <div class="dropzone-icon">
+                      <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <h4>Drag & Drop Asset Image</h4>
+                    <p>Or click to browse storage</p>
+                    <span class="upload-hint">Supports JPEG, PNG, WebP</span>
+                  </div>
+
+                  <div class="dropzone-preview hidden" id="dropzone-preview-box">
+                    <img src="" id="selected-image-preview" alt="Selected Asset">
+                    <div class="scan-laser-line" id="scanner-laser"></div>
+                    <div class="scan-success-indicator" id="scanner-badge">AI Scanner Active</div>
+                    <div id="bounding-boxes-container"></div>
+                  </div>
+                </div>
+
+                <!-- Preset Photo Presets Selector -->
+                <div class="preset-photos-section">
+                  <h5 class="preset-section-title">Select Preset Product Photo</h5>
+                  <div class="preset-photos-grid">
+                    <div class="preset-card" data-preset="macbook" data-path="assets/macbook.png" data-name="Aether Book Pro 16&quot;" data-category="Electronics" data-value="249900.00" data-manufacturer="AetherTech" data-model="AB-16-M3X" data-notes="Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD." data-tags="laptop, hardware, executive, silicon">
+                      <img src="assets/macbook.png" alt="MacBook">
+                      <span>MacBook</span>
+                    </div>
+                    <div class="preset-card" data-preset="chair" data-path="assets/chair.png" data-name="Kinetic Ergonomic Mesh Chair" data-category="Office Gear" data-value="45000.00" data-manufacturer="Herman Office" data-model="Aeron-Gen2" data-notes="Premium posture correction chair with adjustable armrests and mesh backing." data-tags="furniture, ergonomic, office, studio">
+                      <img src="assets/chair.png" alt="Chair">
+                      <span>Chair</span>
+                    </div>
+                    <div class="preset-card" data-preset="camera" data-path="assets/camera.png" data-name="Aether Cine FX3 Camera" data-category="Media Equipment" data-value="389900.00" data-manufacturer="Sone" data-model="ILME-FX3-A" data-notes="Full-frame Cinema line camera. Stored in moisture-controlled case." data-tags="camera, media, video, production">
+                      <img src="assets/camera.png" alt="Camera">
+                      <span>Camera</span>
+                    </div>
+                    <div class="preset-card" data-preset="headset" data-path="assets/headset.png" data-name="Prism VR-X Spatial Headset" data-category="Electronics" data-value="310000.00" data-manufacturer="AetherTech" data-model="PRISM-VRX" data-notes="Calibrated for 90Hz eye-tracking. VR-X spatial headset." data-tags="vr, hardware, spatial, testing">
+                      <img src="assets/headset.png" alt="VR Headset">
+                      <span>VR Headset</span>
+                    </div>
+                    <div class="preset-card" data-preset="microscope" data-path="assets/microscope.png" data-name="BioScan-X Digital Microscope" data-category="Laboratory" data-value="780000.00" data-manufacturer="Optika Labs" data-model="BSX-5000" data-notes="Digital optical microscope with 5000x magnification." data-tags="lab, microscope, research, optical">
+                      <img src="assets/microscope.png" alt="Microscope">
+                      <span>Microscope</span>
+                    </div>
+                    <div class="preset-card" data-preset="smartphone" data-path="assets/smartphone.png" data-name="Aether Phone 15 Pro" data-category="Electronics" data-value="134900.00" data-manufacturer="AetherTech" data-model="AP-15-PRO" data-notes="Aether Phone 15 Pro edition with titanium chassis." data-tags="phone, mobile, electronics, hardware">
+                      <img src="assets/smartphone.png" alt="Smartphone">
+                      <span>Smartphone</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Speech trigger zone -->
+                <div class="voice-intake-card">
+                  <div class="voice-status-bar">
+                    <div class="voice-indicator-glow" id="mic-status-glow"></div>
+                    <span id="mic-status-text">Microphone Idle</span>
+                  </div>
+
+                  <div class="voice-waveform" id="voice-waves">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                  </div>
+
+                  <div class="voice-action-btn-row">
+                    <button class="btn-voice-round" id="mic-toggle-btn" title="Toggle Dictation">
+                      <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div class="voice-live-transcript" id="voice-dictation-box">
+                    <span class="transcript-placeholder">Click microphone above and speak description to fill details... (e.g., "Add an Apple MacBook Pro laptop in excellent condition valued at two lakh fifty thousand rupees inside Office Room B")</span>
+                  </div>
+                </div>
+
+                <div class="instruction-box glassmorphic-subtle">
+                  <h5>Speech Commands Tip:</h5>
+                  <p>Natural speech parsing will map keywords like <strong>"excellent", "good", "poor"</strong> to Condition, and currency amounts like <strong>"₹50,000" or "fifty thousand rupees"</strong> to Value automatically!</p>
+                </div>
+              </div>
+
+              <!-- Tab content 2: Live Webcam Scan -->
+              <div class="tab-pane hidden" id="pane-webcam">
+                <div class="webcam-container">
+                  <video id="webcam-feed" autoplay playsinline muted></video>
+                  <canvas id="webcam-overlay"></canvas>
+                  
+                  <div class="webcam-placeholder" id="webcam-placeholder-box">
+                    <div class="webcam-icon">
+                      <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                    </div>
+                    <h4>Webcam Feed Inactive</h4>
+                    <p>Click "Start Camera Scan" below to enable real-time grocery recognition</p>
+                  </div>
+                  
+                  <div class="scan-laser-line hidden" id="webcam-laser"></div>
+                  <div class="scan-success-indicator hidden" id="webcam-scan-badge">AI Scanner Active</div>
+                  <div class="scanner-reticle hidden" id="webcam-reticle"></div>
+                </div>
                 
-                <div class="dropzone-prompt" id="dropzone-prompt-box">
-                  <div class="dropzone-icon">
-                    <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
+                <div class="webcam-controls-row">
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" class="btn btn-primary" id="btn-toggle-webcam">Start Camera Scan</button>
+                    <button type="button" class="btn btn-success hidden" id="btn-capture-webcam">Capture Frame</button>
                   </div>
-                  <h4>Drag & Drop Asset Image</h4>
-                  <p>Or click to browse storage</p>
-                  <span class="upload-hint">Supports JPEG, PNG, WebP</span>
-                </div>
-
-                <div class="dropzone-preview hidden" id="dropzone-preview-box">
-                  <img src="" id="selected-image-preview" alt="Selected Asset">
-                  <div class="scan-laser-line" id="scanner-laser"></div>
-                  <div class="scan-success-indicator" id="scanner-badge">AI Scanner Active</div>
-                  <div id="bounding-boxes-container"></div>
-                </div>
-              </div>
-
-              <!-- Preset Photo Presets Selector -->
-              <div class="preset-photos-section">
-                <h5 class="preset-section-title">Select Preset Product Photo</h5>
-                <div class="preset-photos-grid">
-                  <div class="preset-card" data-preset="macbook" data-path="assets/macbook.png" data-name="Aether Book Pro 16&quot;" data-category="Electronics" data-value="249900.00" data-manufacturer="AetherTech" data-model="AB-16-M3X" data-notes="Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD." data-tags="laptop, hardware, executive, silicon">
-                    <img src="assets/macbook.png" alt="MacBook">
-                    <span>MacBook</span>
-                  </div>
-                  <div class="preset-card" data-preset="chair" data-path="assets/chair.png" data-name="Kinetic Ergonomic Mesh Chair" data-category="Office Gear" data-value="45000.00" data-manufacturer="Herman Office" data-model="Aeron-Gen2" data-notes="Premium posture correction chair with adjustable armrests and mesh backing." data-tags="furniture, ergonomic, office, studio">
-                    <img src="assets/chair.png" alt="Chair">
-                    <span>Chair</span>
-                  </div>
-                  <div class="preset-card" data-preset="camera" data-path="assets/camera.png" data-name="Aether Cine FX3 Camera" data-category="Media Equipment" data-value="389900.00" data-manufacturer="Sone" data-model="ILME-FX3-A" data-notes="Full-frame Cinema line camera. Stored in moisture-controlled case." data-tags="camera, media, video, production">
-                    <img src="assets/camera.png" alt="Camera">
-                    <span>Camera</span>
-                  </div>
-                  <div class="preset-card" data-preset="headset" data-path="assets/headset.png" data-name="Prism VR-X Spatial Headset" data-category="Electronics" data-value="310000.00" data-manufacturer="AetherTech" data-model="PRISM-VRX" data-notes="Calibrated for 90Hz eye-tracking. VR-X spatial headset." data-tags="vr, hardware, spatial, testing">
-                    <img src="assets/headset.png" alt="VR Headset">
-                    <span>VR Headset</span>
-                  </div>
-                  <div class="preset-card" data-preset="microscope" data-path="assets/microscope.png" data-name="BioScan-X Digital Microscope" data-category="Laboratory" data-value="780000.00" data-manufacturer="Optika Labs" data-model="BSX-5000" data-notes="Digital optical microscope with 5000x magnification." data-tags="lab, microscope, research, optical">
-                    <img src="assets/microscope.png" alt="Microscope">
-                    <span>Microscope</span>
-                  </div>
-                  <div class="preset-card" data-preset="smartphone" data-path="assets/smartphone.png" data-name="Aether Phone 15 Pro" data-category="Electronics" data-value="134900.00" data-manufacturer="AetherTech" data-model="AP-15-PRO" data-notes="Aether Phone 15 Pro edition with titanium chassis." data-tags="phone, mobile, electronics, hardware">
-                    <img src="assets/smartphone.png" alt="Smartphone">
-                    <span>Smartphone</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Speech trigger zone -->
-              <div class="voice-intake-card">
-                <div class="voice-status-bar">
-                  <div class="voice-indicator-glow" id="mic-status-glow"></div>
-                  <span id="mic-status-text">Microphone Idle</span>
-                </div>
-
-                <div class="voice-waveform" id="voice-waves">
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                </div>
-
-                <div class="voice-action-btn-row">
-                  <button class="btn-voice-round" id="mic-toggle-btn" title="Toggle Dictation">
-                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                    </svg>
-                  </button>
+                  <span class="webcam-status-label" id="webcam-model-status">Loading TensorFlow.js...</span>
                 </div>
                 
-                <div class="voice-live-transcript" id="voice-dictation-box">
-                  <span class="transcript-placeholder">Click microphone above and speak description to fill details... (e.g., "Add an Apple MacBook Pro laptop in excellent condition valued at two lakh fifty thousand rupees inside Office Room B")</span>
-                </div>
-              </div>
+                <!-- Removed single-review box as cart is now parallel -->
 
-              <div class="instruction-box glassmorphic-subtle">
-                <h5>Speech Commands Tip:</h5>
-                <p>Natural speech parsing will map keywords like <strong>"excellent", "good", "poor"</strong> to Condition, and currency amounts like <strong>"₹50,000" or "fifty thousand rupees"</strong> to Value automatically!</p>
+                 <div class="instruction-box glassmorphic-subtle" style="margin-top: 5px;">
+                  <h5>Webcam Scanner Tip:</h5>
+                  <p>Hold an Indian grocery item (e.g. Tata Salt, Maggi Noodles, Amul Butter) in front of the lens. The AI model will run real-time inference, scan the item, play a chime, and fill in the details automatically!</p>
+                </div>
+
+                <!-- AI Learned Products Catalog -->
+                <div class="webcam-learned-section glassmorphic-subtle" style="margin-top: 15px; padding: 15px; border-radius: var(--border-radius-md);">
+                  <h5 style="margin-top: 0; margin-bottom: 12px; color: var(--color-accent); font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align: middle;">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    AI Trained Products (8 Items)
+                  </h5>
+                  <div class="webcam-learned-grid">
+                    <div class="learned-item-badge" data-learned="tata_salt">
+                      <span class="bullet" style="background-color: #3b82f6;"></span> Tata Salt (1kg Pack)
+                    </div>
+                    <div class="learned-item-badge" data-learned="maggi">
+                      <span class="bullet" style="background-color: #eab308;"></span> Maggi 2-Min Noodles
+                    </div>
+                    <div class="learned-item-badge" data-learned="amul_butter">
+                      <span class="bullet" style="background-color: #facc15;"></span> Amul Butter (500g)
+                    </div>
+                    <div class="learned-item-badge" data-learned="atta">
+                      <span class="bullet" style="background-color: #ea580c;"></span> Aashirvaad Atta (10kg)
+                    </div>
+                    <div class="learned-item-badge" data-learned="mustard_oil">
+                      <span class="bullet" style="background-color: #ca8a04;"></span> Fortune Mustard Oil (1L)
+                    </div>
+                    <div class="learned-item-badge" data-learned="taj_mahal">
+                      <span class="bullet" style="background-color: #312e81;"></span> Taj Mahal Tea (500g)
+                    </div>
+                    <div class="learned-item-badge" data-learned="haldirams">
+                      <span class="bullet" style="background-color: #dc2626;"></span> Haldiram's Bhujia Sev
+                    </div>
+                    <div class="learned-item-badge" data-learned="dettol">
+                      <span class="bullet" style="background-color: #16a34a;"></span> Dettol Liquid Handwash
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -552,8 +648,9 @@
                   <div class="form-field">
                     <label for="form-name">Asset Name <span class="required">*</span></label>
                     <div class="input-wrapper">
-                      <input type="text" id="form-name" required placeholder="e.g. MacBook Pro M3 Max">
+                      <input type="text" id="form-name" required placeholder="e.g. MacBook Pro M3 Max" autocomplete="off">
                       <div class="glow-indicator"></div>
+                      <div class="autocomplete-suggestions hidden" id="autocomplete-suggestions-box"></div>
                     </div>
                   </div>
                 </div>
@@ -675,6 +772,47 @@
                   <button type="submit" class="btn btn-primary" id="form-submit-btn">Save Asset to Database</button>
                 </div>
               </form>
+
+              <!-- Scanned Items Cart (visible only in Live Webcam Scan mode) -->
+              <div id="webcam-cart-hub" class="hidden">
+                <div class="form-header-row">
+                  <h3 class="card-title">Scanned Items Cart</h3>
+                  <span class="form-mode-badge success" id="cart-item-count">0 Items</span>
+                </div>
+                
+                <div id="webcam-cart-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 440px; overflow-y: auto; padding-right: 5px; margin-bottom: 20px;">
+                  <!-- Cart items will be rendered dynamically -->
+                  <div class="empty-cart-placeholder" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none" style="margin: 0 auto 12px auto; display: block; opacity: 0.5;">
+                      <circle cx="9" cy="21" r="1"></circle>
+                      <circle cx="20" cy="21" r="1"></circle>
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <p style="font-size: 13px; margin: 0;">No items scanned yet.</p>
+                    <p style="font-size: 11px; margin: 4px 0 0 0; opacity: 0.7;">Click "Capture Frame" on the left to add items.</p>
+                  </div>
+                </div>
+
+                <!-- Subtotal/Summary Card -->
+                <div class="cart-summary-card glassmorphic-subtle" style="padding: 15px; border-radius: var(--border-radius-md); margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 700;">
+                    <span style="color: var(--text-secondary);">Total Est. Value:</span>
+                    <span id="webcam-cart-total-cost" style="color: var(--color-accent); font-size: 18px;">₹0.00</span>
+                  </div>
+                </div>
+
+                <div class="form-actions-row">
+                  <button type="button" class="btn btn-secondary" id="btn-clear-webcam-cart" style="flex: 1;">Clear Cart</button>
+                  <button type="button" class="btn btn-success" id="btn-submit-webcam-cart" style="flex: 1.5; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                      <polyline points="17 21 17 13 7 13 7 21"/>
+                      <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Register All Items
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -1248,6 +1386,9 @@
   </div>
 
   <!-- Core JavaScript Architecture -->
+  <!-- TensorFlow.js CDN for client-side grocery model inference -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.17.0/dist/tf-converter.min.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

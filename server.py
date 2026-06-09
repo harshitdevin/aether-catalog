@@ -6,6 +6,37 @@ from pymongo import MongoClient
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
+class MockCollection:
+    def __init__(self): self.data = {}
+    def find(self, query=None): return list(self.data.values())
+    def insert_one(self, doc):
+        doc['_id'] = str(random.randint(1000, 9999))
+        self.data[doc.get('id', doc['_id'])] = doc
+    def insert_many(self, docs):
+        for doc in docs:
+            self.insert_one(doc)
+    def replace_one(self, query, doc, upsert=False):
+        key = list(query.values())[0]
+        self.data[key] = doc
+    def delete_one(self, query):
+        key = list(query.values())[0]
+        if key in self.data:
+            del self.data[key]
+            class Res: deleted_count = 1
+            return Res()
+        class Res: deleted_count = 0
+        return Res()
+    def delete_many(self, query): self.data.clear()
+    def count_documents(self, query): return len(self.data)
+
+class MockDB:
+    def __init__(self):
+        self.assets = MockCollection()
+        self.activities = MockCollection()
+        self.users = MockCollection()
+        self.sales = MockCollection()
+        self.product_templates = MockCollection()
+
 # Local MongoDB connection
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
 try:
@@ -16,35 +47,6 @@ try:
 except Exception as e:
     print(f"CRITICAL: Failed to connect to MongoDB at {MONGO_URI}. Ensure MongoDB is running.")
     print(str(e))
-    class MockCollection:
-        def __init__(self): self.data = {}
-        def find(self): return list(self.data.values())
-        def insert_one(self, doc):
-            doc['_id'] = str(random.randint(1000, 9999))
-            self.data[doc.get('id', doc['_id'])] = doc
-        def insert_many(self, docs):
-            for doc in docs:
-                self.insert_one(doc)
-        def replace_one(self, query, doc, upsert=False):
-            key = list(query.values())[0]
-            self.data[key] = doc
-        def delete_one(self, query):
-            key = list(query.values())[0]
-            if key in self.data:
-                del self.data[key]
-                class Res: deleted_count = 1
-                return Res()
-            class Res: deleted_count = 0
-            return Res()
-        def delete_many(self, query): self.data.clear()
-        def count_documents(self, query): return len(self.data)
-    
-    class MockDB:
-        def __init__(self):
-            self.assets = MockCollection()
-            self.activities = MockCollection()
-            self.users = MockCollection()
-            self.sales = MockCollection()
     db = MockDB()
     print("Warning: Running with fallback in-memory mock database.")
 
@@ -216,6 +218,19 @@ def seed_data():
         if db.activities.count_documents({}) == 0:
             db.activities.insert_many(SEED_ACTIVITIES)
             print("Activities database seeded successfully.")
+            
+        try:
+            collection = db.product_templates if hasattr(db, 'product_templates') else db["product_templates"]
+            if collection.count_documents({}) == 0:
+                import json
+                templates_file = os.path.join(os.path.dirname(__file__), 'modules', 'templates.json')
+                if os.path.exists(templates_file):
+                    with open(templates_file, 'r', encoding='utf-8') as f:
+                        templates_data = json.load(f)
+                        collection.insert_many(templates_data)
+                        print(f"Product templates seeded: {len(templates_data)} items.")
+        except Exception as seed_err:
+            print(f"Templates seeding warning: {seed_err}")
     except Exception as e:
         print(f"Error seeding database: {e}")
 
@@ -226,6 +241,46 @@ seed_data()
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
+
+# Get product templates (filtered by name/tags/category or all)
+@app.route('/api/templates', methods=['GET'])
+def get_templates():
+    try:
+        query = request.args.get('q', '').strip().lower()
+        
+        # Access database collection dynamically
+        collection = db.product_templates if hasattr(db, 'product_templates') else db["product_templates"]
+        
+        # Fetch templates
+        if hasattr(collection, 'find'):
+            if hasattr(db, 'product_templates') and isinstance(db.product_templates, MockCollection):
+                templates = list(db.product_templates.data.values())
+            else:
+                templates = list(collection.find({}))
+        else:
+            templates = []
+            
+        # Format list and/or filter
+        matched = []
+        for t in templates:
+            t_copy = dict(t)
+            if '_id' in t_copy:
+                t_copy['_id'] = str(t_copy['_id'])
+            
+            # If query is specified, check matches
+            if query:
+                name_match = query in t_copy.get('name', '').lower()
+                key_match = query in t_copy.get('key', '').lower()
+                tags_match = any(query in tag.lower() for tag in t_copy.get('tags', []))
+                category_match = query in t_copy.get('category', '').lower()
+                if name_match or key_match or tags_match or category_match:
+                    matched.append(t_copy)
+            else:
+                matched.append(t_copy)
+                
+        return jsonify(matched)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Fetch all users (used to sync front-end caching)
 @app.route('/api/users', methods=['GET'])

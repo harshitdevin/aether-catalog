@@ -14,7 +14,8 @@ const AppState = {
   selectedImageMimeType: null,
   activeAssetId: null,
   isMicActive: false,
-  checkoutCart: []
+  checkoutCart: [],
+  scannedCart: []
 };
 
 // DOM Elements Cache
@@ -57,6 +58,22 @@ const DOM = {
   
   regForm: document.getElementById('asset-reg-form'),
   formReset: document.getElementById('form-reset-btn'),
+  
+  // Tab Switchers & Autocomplete Selectors
+  tabUpload: document.getElementById('tab-upload'),
+  tabWebcam: document.getElementById('tab-webcam'),
+  paneUpload: document.getElementById('pane-upload'),
+  paneWebcam: document.getElementById('pane-webcam'),
+  webcamFeed: document.getElementById('webcam-feed'),
+  webcamOverlay: document.getElementById('webcam-overlay'),
+  webcamPlaceholder: document.getElementById('webcam-placeholder-box'),
+  btnToggleWebcam: document.getElementById('btn-toggle-webcam'),
+  btnCaptureWebcam: document.getElementById('btn-capture-webcam'),
+  webcamStatus: document.getElementById('webcam-model-status'),
+  webcamLaser: document.getElementById('webcam-laser'),
+  webcamBadge: document.getElementById('webcam-scan-badge'),
+  webcamReticle: document.getElementById('webcam-reticle'),
+  autocompleteBox: document.getElementById('autocomplete-suggestions-box'),
   
   // Hands-Free View Elements
   hfStartBtn: document.getElementById('hf-start-btn'),
@@ -2373,8 +2390,1152 @@ async function bootstrap() {
   // 6. Bind Hash Router
   initRouter();
   
+  // 8. Init Autocomplete, Tabs, and TF.js Model
+  setupAutocomplete();
+  setupTabs();
+  initTFModel();
+  
   // 7. Render initial dashboard counts
   Dashboard.updateDashboard();
+}
+
+// ==========================================================================
+// 10. Smart Autocomplete & Live Webcam Inference Engine (TF.js)
+// ==========================================================================
+
+// Autocomplete suggestion handler state
+let autocompleteTimeout = null;
+let currentSuggestions = [];
+let activeSuggestionIndex = -1;
+
+function setupAutocomplete() {
+  const nameInput = document.getElementById('form-name');
+  const suggestionsBox = document.getElementById('autocomplete-suggestions-box');
+  
+  if (!nameInput || !suggestionsBox) return;
+  
+  nameInput.addEventListener('input', () => {
+    clearTimeout(autocompleteTimeout);
+    const query = nameInput.value.trim();
+    
+    if (query.length < 2) {
+      suggestionsBox.classList.add('hidden');
+      suggestionsBox.innerHTML = '';
+      currentSuggestions = [];
+      activeSuggestionIndex = -1;
+      return;
+    }
+    
+    autocompleteTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/templates?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error('Failed to fetch templates');
+        const data = await res.json();
+        
+        currentSuggestions = data;
+        activeSuggestionIndex = -1;
+        
+        if (data.length === 0) {
+          suggestionsBox.classList.add('hidden');
+          suggestionsBox.innerHTML = '';
+          return;
+        }
+        
+        // Render suggestions list
+        suggestionsBox.innerHTML = data.map((item, idx) => `
+          <div class="suggestion-item" data-index="${idx}">
+            <div class="suggestion-info">
+              <span class="suggestion-name">${item.name}</span>
+              <span class="suggestion-model">${item.manufacturer || ''} ${item.model || ''}</span>
+            </div>
+            <div class="suggestion-meta">
+              <span class="suggestion-category">${item.category}</span>
+              <span class="suggestion-value">₹${parseFloat(item.value).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        `).join('');
+        
+        suggestionsBox.classList.remove('hidden');
+        
+        // Add click events to suggestion items
+        suggestionsBox.querySelectorAll('.suggestion-item').forEach(itemEl => {
+          itemEl.addEventListener('click', () => {
+            const idx = parseInt(itemEl.getAttribute('data-index'));
+            selectSuggestion(currentSuggestions[idx]);
+          });
+        });
+      } catch (err) {
+        console.error('Autocomplete error:', err);
+      }
+    }, 250); // Debounce delay
+  });
+  
+  // Keyboard navigation for autocomplete suggestions
+  nameInput.addEventListener('keydown', (e) => {
+    const items = suggestionsBox.querySelectorAll('.suggestion-item');
+    if (suggestionsBox.classList.contains('hidden') || items.length === 0) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+      updateActiveSuggestion(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+      updateActiveSuggestion(items);
+    } else if (e.key === 'Enter') {
+      if (activeSuggestionIndex > -1) {
+        e.preventDefault();
+        selectSuggestion(currentSuggestions[activeSuggestionIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      suggestionsBox.classList.add('hidden');
+      nameInput.blur();
+    }
+  });
+  
+  // Close suggestions box if user clicks outside
+  document.addEventListener('click', (e) => {
+    if (e.target !== nameInput && !suggestionsBox.contains(e.target)) {
+      suggestionsBox.classList.add('hidden');
+    }
+  });
+}
+
+function updateActiveSuggestion(items) {
+  items.forEach((item, idx) => {
+    if (idx === activeSuggestionIndex) {
+      item.classList.add('active');
+      item.scrollIntoView({ block: 'nearest' });
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+function selectSuggestion(item) {
+  const nameInput = document.getElementById('form-name');
+  const suggestionsBox = document.getElementById('autocomplete-suggestions-box');
+  
+  if (!nameInput) return;
+  nameInput.value = item.name;
+  
+  const categoryField = document.getElementById('form-category');
+  if (categoryField) categoryField.value = item.category;
+  
+  const valueField = document.getElementById('form-value');
+  if (valueField) valueField.value = item.value;
+  
+  const manufacturerField = document.getElementById('form-manufacturer');
+  if (manufacturerField) manufacturerField.value = item.manufacturer || '';
+  
+  const modelField = document.getElementById('form-model');
+  if (modelField) modelField.value = item.model || '';
+  
+  const notesField = document.getElementById('form-notes');
+  if (notesField) notesField.value = item.notes || '';
+  
+  const tagsField = document.getElementById('form-tags');
+  if (tagsField) tagsField.value = (item.tags || []).join(', ');
+  
+  // Set preview photo
+  const previewBox = DOM.dropzonePreview;
+  const previewImg = DOM.previewImage;
+  const promptBox = DOM.dropzonePrompt;
+  
+  if (previewBox && previewImg && promptBox) {
+    AppState.selectedImageBase64 = item.image;
+    AppState.selectedImageMimeType = item.image.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png';
+    previewImg.src = item.image;
+    promptBox.classList.add('hidden');
+    previewBox.classList.remove('hidden');
+    
+    // Laser scan animation to feel premium
+    const laser = DOM.laser;
+    if (laser) {
+      laser.classList.remove('hidden');
+      setTimeout(() => laser.classList.add('hidden'), 2000);
+    }
+  }
+  
+  // Flash status badge
+  const aiBadge = DOM.aiExtractStatus;
+  if (aiBadge) {
+    aiBadge.textContent = 'Auto-filled from template';
+    aiBadge.className = 'form-mode-badge success';
+    setTimeout(() => {
+      aiBadge.textContent = 'Waiting for input';
+      aiBadge.className = 'form-mode-badge';
+    }, 4000);
+  }
+  
+  if (suggestionsBox) suggestionsBox.classList.add('hidden');
+}
+
+// Webcam scan state
+let webcamStream = null;
+let tfjsModel = null;
+let tfjsLabels = [];
+let isScanning = false;
+let isInferenceRunning = false;
+let lastScanTime = 0;
+let activeClass = null;
+let activeConfidence = 0;
+const SCAN_COOLDOWN = 3000; // 3 seconds cooldown between detections
+
+// Generate scanner success beep sound using Web Audio API
+function playBeep(type = 'success') {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    if (type === 'success') {
+      // Premium dual chime sweep
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.12); // A5
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    } else {
+      // Flat tone
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(330, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+  } catch (err) {
+    console.error('AudioContext error:', err);
+  }
+}
+
+// Load TensorFlow.js Model and Label Maps
+async function initTFModel() {
+  const modelStatus = DOM.webcamStatus;
+  if (!modelStatus) return;
+  
+  try {
+    modelStatus.textContent = 'Loading TensorFlow.js...';
+    
+    // Check if tf is available globally
+    if (typeof tf === 'undefined') {
+      throw new Error('TensorFlow.js CDN did not load correctly.');
+    }
+    
+    // Configure WebGL backend for GPU hardware acceleration
+    modelStatus.textContent = 'Configuring WebGL Accelerator...';
+    try {
+      await tf.setBackend('webgl');
+      console.log('TensorFlow.js WebGL backend initialized successfully.');
+    } catch (e) {
+      console.warn('WebGL backend not supported. Falling back to CPU backend.', e);
+      await tf.setBackend('cpu');
+    }
+    
+    modelStatus.textContent = 'Loading AI Classifier Model...';
+    
+    // Load model from local endpoint
+    tfjsModel = await tf.loadLayersModel('/web_model/model.json');
+    
+    // Fetch labels
+    const res = await fetch('/web_model/labels.json');
+    if (res.ok) {
+      tfjsLabels = await res.json();
+    } else {
+      // Fallback classes alphabetical
+      tfjsLabels = ["amul_butter", "atta", "dettol", "haldirams", "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"];
+    }
+    
+    modelStatus.textContent = 'AI Grocery Model Loaded';
+    modelStatus.classList.add('active');
+  } catch (err) {
+    console.error('Failed to load TFJS Model:', err);
+    modelStatus.textContent = 'Offline (Dev Fallback Active)';
+    modelStatus.classList.remove('active');
+  }
+}
+
+function renderScannedCart() {
+  const cartList = document.getElementById('webcam-cart-list');
+  const countBadge = document.getElementById('cart-item-count');
+  if (!cartList) return;
+
+  cartList.innerHTML = '';
+
+  if (AppState.scannedCart.length === 0) {
+    cartList.innerHTML = `
+      <div class="empty-cart-placeholder" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none" style="margin: 0 auto 12px auto; display: block; opacity: 0.5;">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <p style="font-size: 13px; margin: 0;">No items scanned yet.</p>
+        <p style="font-size: 11px; margin: 4px 0 0 0; opacity: 0.7;">Click "Capture Frame" on the left to add items.</p>
+      </div>
+    `;
+    if (countBadge) countBadge.textContent = '0 Items';
+    recalculateCartTotal();
+    return;
+  }
+
+  if (countBadge) {
+    const totalQty = AppState.scannedCart.reduce((sum, item) => sum + item.quantity, 0);
+    countBadge.textContent = `${totalQty} Item${totalQty !== 1 ? 's' : ''}`;
+  }
+
+  AppState.scannedCart.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'cart-item-row';
+    row.dataset.id = item.id;
+
+    row.innerHTML = `
+      <div class="cart-item-thumb">
+        <img src="${item.image}" alt="${item.name}">
+      </div>
+      <div class="cart-item-info">
+        <input type="text" class="cart-item-name-input" value="${item.name}" style="background: transparent; border: none; border-bottom: 1px dashed rgba(255,255,255,0.15); color: #ffffff; font-size: 13px; font-weight: 600; padding: 1px 0; outline: none; width: 100%;" title="Click to rename product">
+        <span>${item.category}</span>
+      </div>
+      <div class="cart-item-actions">
+        <div class="cart-item-price-wrapper">
+          <span>₹</span>
+          <input type="number" class="cart-item-price-input" value="${item.value}" step="0.01">
+        </div>
+        <input type="number" class="cart-item-qty-input" value="${item.quantity}" min="1">
+        <button type="button" class="btn-cart-remove" title="Remove item">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    // Bind name input change event
+    const nameInput = row.querySelector('.cart-item-name-input');
+    nameInput.addEventListener('input', (e) => {
+      item.name = e.target.value;
+    });
+
+    // Bind item input change events
+    const priceInput = row.querySelector('.cart-item-price-input');
+    priceInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value) || 0;
+      item.value = val;
+      recalculateCartTotal();
+    });
+
+    const qtyInput = row.querySelector('.cart-item-qty-input');
+    qtyInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value) || 1;
+      item.quantity = val;
+      if (countBadge) {
+        const totalQty = AppState.scannedCart.reduce((sum, it) => sum + it.quantity, 0);
+        countBadge.textContent = `${totalQty} Item${totalQty !== 1 ? 's' : ''}`;
+      }
+      recalculateCartTotal();
+    });
+
+    // Bind remove button click
+    const removeBtn = row.querySelector('.btn-cart-remove');
+    removeBtn.addEventListener('click', () => {
+      AppState.scannedCart = AppState.scannedCart.filter(it => it.id !== item.id);
+      renderScannedCart();
+    });
+
+    cartList.appendChild(row);
+  });
+
+  recalculateCartTotal();
+}
+
+function recalculateCartTotal() {
+  const totalDisplay = document.getElementById('webcam-cart-total-cost');
+  if (!totalDisplay) return;
+
+  const total = AppState.scannedCart.reduce((sum, item) => sum + (item.value * item.quantity), 0);
+  totalDisplay.textContent = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function setupTabs() {
+  const tabUpload = DOM.tabUpload;
+  const tabWebcam = DOM.tabWebcam;
+  const paneUpload = DOM.paneUpload;
+  const paneWebcam = DOM.paneWebcam;
+  
+  if (!tabUpload || !tabWebcam || !paneUpload || !paneWebcam) return;
+  
+  tabUpload.addEventListener('click', () => {
+    tabUpload.classList.add('active');
+    tabWebcam.classList.remove('active');
+    paneUpload.classList.remove('hidden');
+    paneWebcam.classList.add('hidden');
+    
+    // Restore two-column layout showing the registration attributes form
+    const layout = document.querySelector('.registration-layout');
+    const formHub = document.querySelector('.form-hub');
+    if (layout) layout.style.gridTemplateColumns = '1.1fr 1fr';
+    if (formHub) formHub.style.display = 'block';
+    
+    const webcamCart = document.getElementById('webcam-cart-hub');
+    if (webcamCart) webcamCart.classList.add('hidden');
+    if (DOM.regForm) DOM.regForm.classList.remove('hidden');
+    
+    // Stop webcam scan when leaving tab
+    stopWebcam();
+  });
+  
+  tabWebcam.addEventListener('click', () => {
+    tabWebcam.classList.add('active');
+    tabUpload.classList.remove('active');
+    paneWebcam.classList.remove('hidden');
+    paneUpload.classList.add('hidden');
+    
+    // Keep parallel two-column layout in webcam mode
+    const layout = document.querySelector('.registration-layout');
+    const formHub = document.querySelector('.form-hub');
+    if (layout) layout.style.gridTemplateColumns = '1.1fr 1fr';
+    if (formHub) formHub.style.display = 'block';
+    
+    if (DOM.regForm) DOM.regForm.classList.add('hidden');
+    const webcamCart = document.getElementById('webcam-cart-hub');
+    if (webcamCart) webcamCart.classList.remove('hidden');
+    
+    renderScannedCart();
+  });
+  
+  // Bind start/stop button for webcam
+  const btnToggleWebcam = DOM.btnToggleWebcam;
+  if (btnToggleWebcam) {
+    btnToggleWebcam.addEventListener('click', () => {
+      if (isScanning) {
+        stopWebcam();
+      } else {
+        startWebcam();
+      }
+    });
+  }
+  
+  const btnCaptureWebcam = DOM.btnCaptureWebcam;
+  if (btnCaptureWebcam) {
+    btnCaptureWebcam.addEventListener('click', async () => {
+      if (!isScanning) return;
+      
+      const video = DOM.webcamFeed;
+      const modelStatus = DOM.webcamStatus;
+      if (!video || video.paused || video.ended) return;
+      
+      if (modelStatus) {
+        modelStatus.textContent = 'Analyzing captured image...';
+        modelStatus.className = 'webcam-status-label active';
+      }
+      
+      // Capture frame and automatically crop the object boundaries
+      const cropResult = autoCropObject(video);
+      const frameDataUri = cropResult.frameDataUri;
+      const colorfulness = cropResult.colorfulness;
+      
+      // If the image is dull/neutral (colorfulness < 22), treat it immediately as unknown
+      if (colorfulness < 22) {
+        await handleSuccessfulScan('unknown', 0.0, frameDataUri);
+        return;
+      }
+      
+      // Create a temporary canvas for model classification (static pixel grab avoids WebGL green-screen conflict)
+      const canvas = document.createElement('canvas');
+      canvas.width = 224;
+      canvas.height = 224;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, 224, 224);
+      
+      let predictedClass = tfjsLabels[0] || 'tata_salt';
+      let maxProb = 1.0;
+      
+      try {
+        // Run classification ONCE on the captured canvas (prevents WebGL green-screen conflict)
+        if (tfjsModel && typeof tf !== 'undefined') {
+          const predictions = tf.tidy(() => {
+            const tensor = tf.browser.fromPixels(canvas)
+                              .resizeNearestNeighbor([224, 224])
+                              .toFloat()
+                              .expandDims();
+            return tfjsModel.predict(tensor);
+          });
+          
+          const probabilities = await predictions.data();
+          predictions.dispose();
+          
+          let maxIdx = 0;
+          maxProb = 0;
+          for (let i = 0; i < probabilities.length; i++) {
+            if (probabilities[i] > maxProb) {
+              maxProb = probabilities[i];
+              maxIdx = i;
+            }
+          }
+          predictedClass = tfjsLabels[maxIdx] || 'tata_salt';
+        }
+        
+        // Verify color profile matches target class
+        if (!checkColorMatch(predictedClass, cropResult.rawPixels)) {
+          console.warn(`Color profile mismatch for predicted class '${predictedClass}'. Rejecting to 'unknown'.`);
+          predictedClass = 'unknown';
+          maxProb = 0.0;
+        }
+        
+        // Trigger successful scan handler to push item to cart (leaves camera running)
+        await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+        
+      } catch (err) {
+        console.error('Capture classification failed:', err);
+        if (modelStatus) {
+          modelStatus.textContent = 'Inference failed. Added Tata Salt.';
+        }
+        // Fallback fill with captured frame data
+        await handleSuccessfulScan('tata_salt', 1.0, frameDataUri);
+      }
+    });
+  }
+  
+  // Bind Scanned Items Cart action buttons
+  const btnClearCart = document.getElementById('btn-clear-webcam-cart');
+  if (btnClearCart) {
+    btnClearCart.addEventListener('click', () => {
+      AppState.scannedCart = [];
+      renderScannedCart();
+      
+      const modelStatus = DOM.webcamStatus;
+      if (modelStatus) {
+        modelStatus.textContent = 'Cart Cleared';
+        modelStatus.className = 'webcam-status-label active';
+      }
+    });
+  }
+  
+  const btnSubmitCart = document.getElementById('btn-submit-webcam-cart');
+  if (btnSubmitCart) {
+    btnSubmitCart.addEventListener('click', async () => {
+      if (AppState.scannedCart.length === 0) {
+        alert('Your scanned items cart is empty! Scan items first.');
+        return;
+      }
+      
+      btnSubmitCart.disabled = true;
+      btnSubmitCart.textContent = 'Registering items...';
+      
+      try {
+        for (const item of AppState.scannedCart) {
+          const qty = item.quantity;
+          if (qty <= 1) {
+            const payload = {
+              name: item.name,
+              category: item.category,
+              value: item.value,
+              manufacturer: item.manufacturer || '',
+              model: item.model || '',
+              condition: 'Good',
+              status: 'In Service',
+              location: 'Storage A',
+              serial: '',
+              tags: item.tags || [],
+              notes: item.notes || '',
+              image: item.image
+            };
+            DB.saveAsset(payload);
+          } else {
+            for (let i = 1; i <= qty; i++) {
+              const payload = {
+                name: `${item.name} (${i}/${qty})`,
+                category: item.category,
+                value: item.value,
+                manufacturer: item.manufacturer || '',
+                model: item.model || '',
+                condition: 'Good',
+                status: 'In Service',
+                location: 'Storage A',
+                serial: '',
+                tags: item.tags || [],
+                notes: item.notes || '',
+                image: item.image
+              };
+              DB.saveAsset(payload);
+            }
+          }
+        }
+        
+        // Clear cart
+        AppState.scannedCart = [];
+        renderScannedCart();
+        
+        // Reset dashboard stats and redirect to catalog
+        Dashboard.updateDashboard();
+        window.location.hash = '#catalog';
+        
+      } catch (err) {
+        console.error('Bulk registration failed:', err);
+        alert('Failed to register items. Please try again.');
+      } finally {
+        btnSubmitCart.disabled = false;
+        btnSubmitCart.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Register All Items
+        `;
+      }
+    });
+  }
+}
+
+let lastInferenceTime = 0;
+const INFERENCE_INTERVAL = 300; // Run inference every 300ms (3.3 FPS) to keep performance buttery smooth
+
+async function webcamInferenceLoop(timestamp) {
+  if (!isScanning || !tfjsModel) return;
+
+  const video = DOM.webcamFeed;
+  if (!video || video.paused || video.ended) {
+    requestAnimationFrame(webcamInferenceLoop);
+    return;
+  }
+
+  // Throttle loop runs
+  if (timestamp - lastInferenceTime < INFERENCE_INTERVAL) {
+    requestAnimationFrame(webcamInferenceLoop);
+    return;
+  }
+  lastInferenceTime = timestamp;
+
+  if (isInferenceRunning) {
+    requestAnimationFrame(webcamInferenceLoop);
+    return;
+  }
+
+  isInferenceRunning = true;
+
+  try {
+    let predictedClass = null;
+    let maxProb = 0;
+
+    // Run TF.js inference directly on the video element for speed (read-only texture upload is fast)
+    if (tfjsModel && typeof tf !== 'undefined') {
+      const predictions = tf.tidy(() => {
+        const tensor = tf.browser.fromPixels(video)
+                          .resizeNearestNeighbor([224, 224])
+                          .toFloat()
+                          .expandDims();
+        return tfjsModel.predict(tensor);
+      });
+
+      const probabilities = await predictions.data();
+      predictions.dispose();
+
+      let maxIdx = 0;
+      for (let i = 0; i < probabilities.length; i++) {
+        if (probabilities[i] > maxProb) {
+          maxProb = probabilities[i];
+          maxIdx = i;
+        }
+      }
+      predictedClass = tfjsLabels[maxIdx];
+    }
+
+    if (predictedClass && predictedClass !== 'unknown' && maxProb > 0.85) {
+      const now = Date.now();
+      // Only auto-capture if cooldown has passed or if it's a different item class
+      if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
+        // Capture snapshot and automatically crop the object boundaries
+        const cropResult = autoCropObject(video);
+        
+        // Reject auto-scanning of dull background noise or hands
+        if (cropResult.colorfulness < 22) {
+          activeClass = null; // Reset
+          isInferenceRunning = false;
+          requestAnimationFrame(webcamInferenceLoop);
+          return;
+        }
+
+        // Verify color profile matches target class (ignore auto-capture if color mismatch)
+        if (!checkColorMatch(predictedClass, cropResult.rawPixels)) {
+          console.log(`Auto-scan ignored: Color profile mismatch for predicted class '${predictedClass}'.`);
+          activeClass = null; // Reset
+          isInferenceRunning = false;
+          requestAnimationFrame(webcamInferenceLoop);
+          return;
+        }
+
+        lastScanTime = now;
+        activeClass = predictedClass;
+        
+        // Trigger successful scan
+        await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+      }
+    } else if (maxProb < 0.70) {
+      // Clear active class when item is removed from camera view
+      activeClass = null;
+    }
+  } catch (err) {
+    console.error('Auto-inference error:', err);
+  } finally {
+    isInferenceRunning = false;
+    requestAnimationFrame(webcamInferenceLoop);
+  }
+}
+
+// Verify color profile matches the predicted class
+function checkColorMatch(classKey, data) {
+  if (!data || data.length === 0) return true;
+  
+  let redCount = 0;
+  let greenCount = 0;
+  let blueCount = 0;
+  let yellowCount = 0;
+  let orangeCount = 0;
+  let darkCount = 0;
+  let whiteCount = 0;
+  
+  const totalPixels = data.length / 4;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    
+    // Check dark/black
+    if (r < 65 && g < 65 && b < 80) {
+      darkCount++;
+    }
+    // Check white
+    if (r > 190 && g > 190 && b > 190 && Math.abs(r - g) < 20 && Math.abs(r - b) < 20 && Math.abs(g - b) < 20) {
+      whiteCount++;
+    }
+    // Check blue (Tata Salt, Taj Mahal)
+    if (b > 90 && b > r + 12 && b > g + 8) {
+      blueCount++;
+    }
+    // Check green (Dettol)
+    if (g > 80 && g > r + 15 && g > b + 15) {
+      greenCount++;
+    }
+    // Check red (Haldirams)
+    if (r > 100 && r > g + 45 && r > b + 45) {
+      redCount++;
+    }
+    // Check yellow (Maggi, Amul Butter, Mustard Oil)
+    if (r > 120 && g > 110 && b < r - 35) {
+      yellowCount++;
+    }
+    // Check orange/brown (Atta)
+    if (r > 100 && g > 60 && g < r - 15 && b < g - 15) {
+      orangeCount++;
+    }
+  }
+  
+  const pctBlue = blueCount / totalPixels;
+  const pctGreen = greenCount / totalPixels;
+  const pctRed = redCount / totalPixels;
+  const pctYellow = yellowCount / totalPixels;
+  const pctOrange = orangeCount / totalPixels;
+  const pctDark = darkCount / totalPixels;
+  const pctWhite = whiteCount / totalPixels;
+  
+  console.log(`Color profile match [${classKey}]: Blue=${(pctBlue*100).toFixed(1)}%, Green=${(pctGreen*100).toFixed(1)}%, Red=${(pctRed*100).toFixed(1)}%, Yellow=${(pctYellow*100).toFixed(1)}%, Orange=${(pctOrange*100).toFixed(1)}%, Dark=${(pctDark*100).toFixed(1)}%, White=${(pctWhite*100).toFixed(1)}%`);
+  
+  if (classKey === 'tata_salt') {
+    // Tata Salt is blue and white. Must have visible blue accents.
+    return (pctBlue >= 0.012) || (pctBlue >= 0.006 && pctWhite >= 0.10);
+  }
+  if (classKey === 'maggi') {
+    // Maggi packaging is very bright yellow.
+    return pctYellow >= 0.05;
+  }
+  if (classKey === 'dettol') {
+    // Dettol is green.
+    return pctGreen >= 0.025;
+  }
+  if (classKey === 'haldirams') {
+    // Haldirams is red.
+    return pctRed >= 0.035;
+  }
+  if (classKey === 'amul_butter') {
+    // Amul Butter is yellow/blue.
+    return pctYellow >= 0.035 || pctBlue >= 0.015;
+  }
+  if (classKey === 'mustard_oil') {
+    // Mustard oil bottle is golden-yellow or golden-orange.
+    return pctYellow >= 0.025 || pctOrange >= 0.025;
+  }
+  if (classKey === 'atta') {
+    // Atta is orange/brown.
+    return pctOrange >= 0.035;
+  }
+  if (classKey === 'taj_mahal') {
+    // Taj Mahal tea box is dark navy/black.
+    return pctDark >= 0.15 || (pctBlue >= 0.015 && pctDark >= 0.08);
+  }
+  if (classKey === 'unknown') {
+    return true;
+  }
+  
+  return true;
+}
+
+// Calculate Hasler-Suesstrunk Colorfulness Metric to detect dull/neutral background noise
+function getImageColorfulness(data) {
+  let rg = [];
+  let yb = [];
+  
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    
+    rg.push(r - g);
+    yb.push(0.5 * (r + g) - b);
+  }
+  
+  const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const std = (arr, m) => Math.sqrt(arr.reduce((a, b) => a + (b - m) * (b - m), 0) / arr.length);
+  
+  const mRg = mean(rg);
+  const mYb = mean(yb);
+  const sRg = std(rg, mRg);
+  const sYb = std(yb, mYb);
+  
+  const stdRoot = Math.sqrt(sRg * sRg + sYb * sYb);
+  const meanRoot = Math.sqrt(mRg * mRg + mYb * mYb);
+  
+  return stdRoot + 0.3 * meanRoot;
+}
+
+// Automatically crop object from background by scanning color variance against borders
+function autoCropObject(videoEl) {
+  const tempCanvas = document.createElement('canvas');
+  const w = videoEl.videoWidth || 640;
+  const h = videoEl.videoHeight || 480;
+  tempCanvas.width = w;
+  tempCanvas.height = h;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.drawImage(videoEl, 0, 0, w, h);
+
+  // Downsample to 80x60 grid to run analysis fast and filter out noise
+  const scanCanvas = document.createElement('canvas');
+  scanCanvas.width = 80;
+  scanCanvas.height = 60;
+  const scanCtx = scanCanvas.getContext('2d');
+  scanCtx.drawImage(tempCanvas, 0, 0, 80, 60);
+
+  const imgData = scanCtx.getImageData(0, 0, 80, 60);
+  const data = imgData.data;
+  
+  // Compute Hasler-Suesstrunk colorfulness metric
+  const colorfulness = getImageColorfulness(data);
+
+  // Sample border pixels to estimate background average color
+  let bgR = 0, bgG = 0, bgB = 0;
+  let bgCount = 0;
+  
+  for (let x = 0; x < 80; x++) {
+    const topIdx = (x) * 4;
+    const botIdx = (59 * 80 + x) * 4;
+    bgR += data[topIdx] + data[botIdx];
+    bgG += data[topIdx + 1] + data[botIdx + 1];
+    bgB += data[topIdx + 2] + data[botIdx + 2];
+    bgCount += 2;
+  }
+  for (let y = 1; y < 59; y++) {
+    const leftIdx = (y * 80) * 4;
+    const rightIdx = (y * 80 + 79) * 4;
+    bgR += data[leftIdx] + data[rightIdx];
+    bgG += data[leftIdx + 1] + data[rightIdx + 1];
+    bgB += data[leftIdx + 2] + data[rightIdx + 2];
+    bgCount += 2;
+  }
+  
+  bgR = bgR / bgCount;
+  bgG = bgG / bgCount;
+  bgB = bgB / bgCount;
+
+  // Scan pixels and find bounding box of foreground (pixels that differ significantly)
+  let minX = 80, maxX = 0, minY = 60, maxY = 0;
+  const colorThreshold = 35; // Sensitivity threshold for color difference
+
+  for (let y = 0; y < 60; y++) {
+    for (let x = 0; x < 80; x++) {
+      const idx = (y * 80 + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+
+      const diff = Math.sqrt(
+        (r - bgR) * (r - bgR) +
+        (g - bgG) * (g - bgG) +
+        (b - bgB) * (b - bgB)
+      );
+
+      if (diff > colorThreshold) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // If a valid bounding box is detected
+  if (maxX > minX && maxY > minY) {
+    let cropX = (minX / 80) * w;
+    let cropY = (minY / 60) * h;
+    let cropW = ((maxX - minX) / 80) * w;
+    let cropH = ((maxY - minY) / 60) * h;
+
+    // Add 12% padding around the object
+    const padX = cropW * 0.12;
+    const padY = cropH * 0.12;
+    
+    cropX = Math.max(0, cropX - padX);
+    cropY = Math.max(0, cropY - padY);
+    cropW = Math.min(w - cropX, cropW + 2 * padX);
+    cropH = Math.min(h - cropY, cropH + 2 * padY);
+
+    // Make crop square
+    const finalSize = Math.max(cropW, cropH);
+    const centerX = cropX + cropW / 2;
+    const centerY = cropY + cropH / 2;
+
+    let finalX = centerX - finalSize / 2;
+    let finalY = centerY - finalSize / 2;
+
+    if (finalX < 0) finalX = 0;
+    if (finalY < 0) finalY = 0;
+    let finalW = finalSize;
+    let finalH = finalSize;
+    if (finalX + finalW > w) finalW = w - finalX;
+    if (finalY + finalH > h) finalH = h - finalY;
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = 300;
+    outCanvas.height = 300;
+    const outCtx = outCanvas.getContext('2d');
+    outCtx.drawImage(tempCanvas, finalX, finalY, finalW, finalH, 0, 0, 300, 300);
+    return { frameDataUri: outCanvas.toDataURL('image/jpeg', 0.85), colorfulness, rawPixels: data };
+  }
+
+  // Fallback: 65% center square
+  const fallbackCanvas = document.createElement('canvas');
+  fallbackCanvas.width = 300;
+  fallbackCanvas.height = 300;
+  const fallbackCtx = fallbackCanvas.getContext('2d');
+  const fallbackSize = Math.min(w, h) * 0.65;
+  const sx = (w - fallbackSize) / 2;
+  const sy = (h - fallbackSize) / 2;
+  fallbackCtx.drawImage(tempCanvas, sx, sy, fallbackSize, fallbackSize, 0, 0, 300, 300);
+  return { frameDataUri: fallbackCanvas.toDataURL('image/jpeg', 0.85), colorfulness, rawPixels: data };
+}
+
+// Start live camera scanning
+async function startWebcam() {
+  const video = DOM.webcamFeed;
+  const placeholder = DOM.webcamPlaceholder;
+  const btn = DOM.btnToggleWebcam;
+  const laser = DOM.webcamLaser;
+  const badge = DOM.webcamBadge;
+  const modelStatus = DOM.webcamStatus;
+  
+  if (!video || !btn) return;
+  
+  // Hide review card panel and restore webcam view if active
+  const reviewBox = document.getElementById('webcam-review-box');
+  const container = document.querySelector('.webcam-container');
+  const controls = document.querySelector('.webcam-controls-row');
+  if (reviewBox) reviewBox.classList.add('hidden');
+  if (container) container.classList.remove('hidden');
+  if (controls) controls.classList.remove('hidden');
+  
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Initializing Camera...';
+    
+    const constraints = {
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 60, min: 30 }
+      },
+      audio: false
+    };
+    
+    webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = webcamStream;
+    
+    // When video starts playing
+    video.onloadedmetadata = () => {
+      if (placeholder) placeholder.classList.add('hidden');
+      if (laser) laser.classList.remove('hidden');
+      if (badge) badge.classList.remove('hidden');
+      if (DOM.webcamReticle) DOM.webcamReticle.classList.remove('hidden');
+      
+      btn.textContent = 'Stop Camera Scan';
+      btn.className = 'btn btn-danger';
+      btn.disabled = false;
+      
+      if (DOM.btnCaptureWebcam) {
+        DOM.btnCaptureWebcam.classList.remove('hidden');
+      }
+      
+      isScanning = true;
+      requestAnimationFrame(webcamInferenceLoop);
+    };
+    
+  } catch (err) {
+    console.error('Webcam initialization failed:', err);
+    btn.textContent = 'Start Camera Scan';
+    btn.className = 'btn btn-primary';
+    btn.disabled = false;
+    alert('Failed to access webcam. Please check camera permissions!');
+  }
+}
+
+// Stop live camera scanning
+function stopWebcam() {
+  const video = DOM.webcamFeed;
+  const placeholder = DOM.webcamPlaceholder;
+  const btn = DOM.btnToggleWebcam;
+  const laser = DOM.webcamLaser;
+  const badge = DOM.webcamBadge;
+  const modelStatus = DOM.webcamStatus;
+  
+  if (!btn) return;
+  
+  isScanning = false;
+  
+  // Clear active badges
+  document.querySelectorAll('.learned-item-badge').forEach(b => b.classList.remove('active'));
+  
+  if (webcamStream) {
+    webcamStream.getTracks().forEach(track => track.stop());
+    webcamStream = null;
+  }
+  
+  if (video) {
+    video.srcObject = null;
+  }
+  
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (laser) laser.classList.add('hidden');
+  if (badge) badge.classList.add('hidden');
+  if (DOM.webcamReticle) DOM.webcamReticle.classList.add('hidden');
+  
+  if (DOM.btnCaptureWebcam) {
+    DOM.btnCaptureWebcam.classList.add('hidden');
+  }
+  
+  if (modelStatus) {
+    modelStatus.textContent = tfjsModel ? 'AI Grocery Model Loaded' : 'TensorFlow.js Ready';
+    modelStatus.className = 'webcam-status-label';
+  }
+  
+  btn.textContent = 'Start Camera Scan';
+  btn.className = 'btn btn-primary';
+  btn.disabled = false;
+}
+
+// Handle successful scan detection
+async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
+  const modelStatus = DOM.webcamStatus;
+
+  // Handle low-confidence / out-of-distribution (untrained) products
+  if (classKey === 'unknown' || confidence < 0.80) {
+    playBeep('warning'); // Warning beep
+    
+    const newItem = {
+      id: `scanned-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: "Unknown Product",
+      category: "Uncategorized",
+      value: 0.0,
+      quantity: 1,
+      manufacturer: "",
+      model: "",
+      notes: "Unclassified item. Please rename and set price manually.",
+      tags: ["uncategorized", "scanned"],
+      image: frameDataUri
+    };
+    
+    AppState.scannedCart.push(newItem);
+    renderScannedCart();
+    
+    if (modelStatus) {
+      modelStatus.textContent = `Unclassified Product Added (Confidence: ${Math.round(confidence * 100)}%)`;
+      modelStatus.className = 'webcam-status-label active';
+    }
+    return;
+  }
+
+  // Handle high confidence scans
+  playBeep('success');
+  
+  try {
+    const res = await fetch(`/api/templates?q=${encodeURIComponent(classKey)}`);
+    if (!res.ok) throw new Error('Templates endpoint query failed');
+    const matches = await res.json();
+    
+    const item = matches.find(m => m.key === classKey) || matches[0];
+    
+    if (item) {
+      const newItem = {
+        id: `scanned-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name: item.name,
+        category: item.category,
+        value: item.value,
+        quantity: 1,
+        manufacturer: item.manufacturer || '',
+        model: item.model || '',
+        notes: item.notes || '',
+        tags: item.tags || [],
+        image: frameDataUri
+      };
+      
+      AppState.scannedCart.push(newItem);
+      renderScannedCart();
+      
+      if (modelStatus) {
+        modelStatus.textContent = `Added: ${item.name} (${Math.round(confidence * 100)}%)`;
+        modelStatus.className = 'webcam-status-label success';
+        
+        // Reset label back to active scanner after 2.5 seconds
+        setTimeout(() => {
+          if (isScanning && modelStatus) {
+            modelStatus.textContent = 'AI Grocery Scanner Active';
+            modelStatus.className = 'webcam-status-label active';
+          }
+        }, 2500);
+      }
+      
+      // Update badge indicator
+      const activeBadge = document.querySelector(`.learned-item-badge[data-learned="${classKey}"]`);
+      if (activeBadge) {
+        document.querySelectorAll('.learned-item-badge').forEach(b => b.classList.remove('active'));
+        activeBadge.classList.add('active');
+        // Clear active badge after 2 seconds
+        setTimeout(() => activeBadge.classList.remove('active'), 2000);
+      }
+    }
+  } catch (err) {
+    console.error('Scan autofill failed:', err);
+  }
 }
 
 // Start application when DOM completes loading

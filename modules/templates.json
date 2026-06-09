@@ -1,0 +1,156 @@
+[
+  {
+    "key": "macbook",
+    "name": "Aether Book Pro 16\"",
+    "category": "Electronics",
+    "value": 249900.00,
+    "manufacturer": "AetherTech",
+    "model": "AB-16-M3X",
+    "tags": ["laptop", "hardware", "executive", "silicon"],
+    "notes": "CTO primary machine. Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD.",
+    "image": "assets/macbook.png"
+  },
+  {
+    "key": "chair",
+    "name": "Kinetic Ergonomic Mesh Chair",
+    "category": "Office Gear",
+    "value": 45000.00,
+    "manufacturer": "Herman Office",
+    "model": "Aeron-Gen2",
+    "tags": ["furniture", "ergonomic", "office", "studio"],
+    "notes": "Premium posture correction chair with adjustable armrests and mesh backing.",
+    "image": "assets/chair.png"
+  },
+  {
+    "key": "camera",
+    "name": "Aether Cine FX3 Camera",
+    "category": "Media Equipment",
+    "value": 389900.00,
+    "manufacturer": "Sone",
+    "model": "ILME-FX3-A",
+    "tags": ["camera", "media", "video", "production"],
+    "notes": "Full-frame Cinema line camera. Stored in moisture-controlled case with 50mm f/1.2 lens.",
+    "image": "assets/camera.png"
+  },
+  {
+    "key": "headset",
+    "name": "Prism VR-X Spatial Headset",
+    "category": "Electronics",
+    "value": 310000.00,
+    "manufacturer": "AetherTech",
+    "model": "PRISM-VRX",
+    "tags": ["vr", "hardware", "spatial", "testing"],
+    "notes": "Used by the spatial software development team. Calibrated for 90Hz eye-tracking.",
+    "image": "assets/headset.png"
+  },
+  {
+    "key": "microscope",
+    "name": "BioScan-X Digital Microscope",
+    "category": "Laboratory",
+    "value": 780000.00,
+    "manufacturer": "Optika Labs",
+    "model": "BSX-5000",
+    "tags": ["lab", "microscope", "research", "optical"],
+    "notes": "Digital optical microscope with 5000x magnification and USB capture output.",
+    "image": "assets/microscope.png"
+  },
+  {
+    "key": "smartphone",
+    "name": "Aether Phone 15 Pro",
+    "category": "Electronics",
+    "value": 134900.00,
+    "manufacturer": "AetherTech",
+    "model": "AP-15-PRO",
+    "tags": ["phone", "mobile", "electronics", "hardware"],
+    "notes": "Aether Phone 15 Pro edition with titanium chassis.",
+    "image": "assets/smartphone.png"
+  },
+  {
+    "key": "tata_salt",
+    "name": "Tata Salt",
+    "category": "Indian Groceries",
+    "value": 28.00,
+    "manufacturer": "Tata Consumer Products",
+    "model": "1kg Pack",
+    "tags": ["salt", "groceries", "tata", "iodized", "cooking"],
+    "notes": "Tata Salt Vacuum Evaporated Iodized Salt. Desh Ka Namak.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"s1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%233b82f6\"/><stop offset=\"100%\" stop-color=\"%231d4ed8\"/></linearGradient></defs><rect x=\"280\" y=\"100\" width=\"240\" height=\"300\" rx=\"20\" fill=\"url(%23s1)\" stroke=\"%233b82f6\" stroke-width=\"4\"/><path d=\"M280,220 C320,200 480,240 520,220 L520,380 C480,390 320,370 280,380 Z\" fill=\"%23ffffff\" opacity=\"0.9\"/><text x=\"400\" y=\"160\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"28\" font-weight=\"bold\" text-anchor=\"middle\">TATA</text><text x=\"400\" y=\"280\" fill=\"%231e3a8a\" font-family=\"sans-serif\" font-size=\"32\" font-weight=\"900\" text-anchor=\"middle\">SALT</text><text x=\"400\" y=\"320\" fill=\"%231d4ed8\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\">IODIZED SALT</text><circle cx=\"400\" cy=\"440\" r=\"12\" fill=\"%23ffffff\"/><text x=\"400\" y=\"470\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Tata Salt - Desh Ka Namak</text></svg>"
+  },
+  {
+    "key": "maggi",
+    "name": "Maggi 2-Minute Noodles",
+    "category": "Indian Groceries",
+    "value": 14.00,
+    "manufacturer": "Nestle",
+    "model": "70g Pack",
+    "tags": ["noodles", "groceries", "nestle", "snacks", "instant"],
+    "notes": "Maggi 2-Minute Instant Noodles, Masala flavor. Quick and easy snack.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"m1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23eab308\"/><stop offset=\"100%\" stop-color=\"%23ca8a04\"/></linearGradient></defs><rect x=\"260\" y=\"120\" width=\"280\" height=\"260\" rx=\"15\" fill=\"url(%23m1)\" stroke=\"%23eab308\" stroke-width=\"4\"/><rect x=\"300\" y=\"160\" width=\"200\" height=\"80\" rx=\"8\" fill=\"%23dc2626\"/><text x=\"400\" y=\"215\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">Maggi</text><text x=\"400\" y=\"290\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" text-anchor=\"middle\">2-Minute</text><text x=\"400\" y=\"325\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"18\" font-weight=\"bold\" text-anchor=\"middle\">MASALA NOODLES</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Nestle Maggi Instant Noodles</text></svg>"
+  },
+  {
+    "key": "amul_butter",
+    "name": "Amul Butter",
+    "category": "Indian Groceries",
+    "value": 275.00,
+    "manufacturer": "Amul",
+    "model": "500g Pack",
+    "tags": ["butter", "dairy", "amul", "groceries", "spread"],
+    "notes": "Amul Pasteurised Salted Butter. Utterly Butterly Delicious.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"b1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23fef08a\"/><stop offset=\"100%\" stop-color=\"%23facc15\"/></linearGradient></defs><rect x=\"250\" y=\"110\" width=\"300\" height=\"280\" rx=\"12\" fill=\"url(%23b1)\" stroke=\"%23facc15\" stroke-width=\"4\"/><rect x=\"280\" y=\"150\" width=\"240\" height=\"80\" rx=\"6\" fill=\"%232563eb\"/><text x=\"400\" y=\"205\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"40\" font-weight=\"900\" text-anchor=\"middle\">Amul</text><text x=\"400\" y=\"280\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">BUTTER</text><text x=\"400\" y=\"320\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Pasteurised Salted</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Amul butter - Utterly Butterly Delicious</text></svg>"
+  },
+  {
+    "key": "atta",
+    "name": "Aashirvaad Shudh Chakki Atta",
+    "category": "Indian Groceries",
+    "value": 460.00,
+    "manufacturer": "ITC Limited",
+    "model": "10kg Pack",
+    "tags": ["atta", "flour", "wheat", "groceries", "roti"],
+    "notes": "Aashirvaad Shudh Chakki Whole Wheat Atta. 100% pure wheat flour.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"a1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23ea580c\"/><stop offset=\"100%\" stop-color=\"%23c2410c\"/></linearGradient></defs><rect x=\"270\" y=\"90\" width=\"260\" height=\"320\" rx=\"25\" fill=\"url(%23a1)\" stroke=\"%23ea580c\" stroke-width=\"4\"/><rect x=\"300\" y=\"130\" width=\"200\" height=\"60\" rx=\"5\" fill=\"%23ffffff\"/><text x=\"400\" y=\"172\" fill=\"%23c2410c\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"900\" text-anchor=\"middle\">AASHIRVAAD</text><text x=\"400\" y=\"240\" fill=\"%23fef08a\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">ATTA</text><text x=\"400\" y=\"300\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"18\" font-weight=\"bold\" text-anchor=\"middle\">Shudh Chakki</text><path d=\"M380,330 L400,310 L420,330 M380,350 L400,330 L420,350\" stroke=\"%23fef08a\" stroke-width=\"3\" fill=\"none\"/><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Aashirvaad Whole Wheat Atta</text></svg>"
+  },
+  {
+    "key": "mustard_oil",
+    "name": "Fortune Mustard Oil",
+    "category": "Indian Groceries",
+    "value": 175.00,
+    "manufacturer": "Adani Wilmar",
+    "model": "1L Bottle",
+    "tags": ["oil", "mustard", "cooking", "fortune", "groceries"],
+    "notes": "Fortune Kachi Ghani Pure Mustard Oil. Premium mustard oil for traditional cooking.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"o1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23ca8a04\"/><stop offset=\"100%\" stop-color=\"%23854d0e\"/></linearGradient></defs><rect x=\"310\" y=\"80\" width=\"180\" height=\"320\" rx=\"40\" fill=\"url(%23o1)\" stroke=\"%23eab308\" stroke-width=\"3\"/><rect x=\"360\" y=\"30\" width=\"80\" height=\"50\" rx=\"5\" fill=\"%23dc2626\"/><rect x=\"330\" y=\"160\" width=\"140\" height=\"120\" rx=\"4\" fill=\"%23ffffff\"/><text x=\"400\" y=\"200\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">Fortune</text><text x=\"400\" y=\"230\" fill=\"%23854d0e\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Kachi Ghani</text><text x=\"400\" y=\"260\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\">MUSTARD OIL</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Fortune Kachi Ghani Mustard Oil</text></svg>"
+  },
+  {
+    "key": "taj_mahal",
+    "name": "Taj Mahal Tea",
+    "category": "Indian Groceries",
+    "value": 350.00,
+    "manufacturer": "Hindustan Unilever",
+    "model": "500g Box",
+    "tags": ["tea", "beverage", "taj mahal", "hul", "groceries"],
+    "notes": "Brooke Bond Taj Mahal Tea loose leaves. Unique flavor with rich aroma.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"t1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%231e1b4b\"/><stop offset=\"100%\" stop-color=\"%230f172a\"/></linearGradient></defs><rect x=\"260\" y=\"110\" width=\"280\" height=\"280\" rx=\"15\" fill=\"url(%23t1)\" stroke=\"%23ca8a04\" stroke-width=\"4\"/><text x=\"400\" y=\"160\" fill=\"%23facc15\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"bold\" text-anchor=\"middle\">Brooke Bond</text><text x=\"400\" y=\"220\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">TAJ MAHAL</text><path d=\"M360,280 C360,250 440,250 440,280\" stroke=\"%23facc15\" stroke-width=\"4\" fill=\"none\"/><text x=\"400\" y=\"330\" fill=\"%23facc15\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" text-anchor=\"middle\">TEA</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Taj Mahal Premium Tea - Wah Taj!</text></svg>"
+  },
+  {
+    "key": "haldirams",
+    "name": "Haldiram's Bhujia Sev",
+    "category": "Indian Groceries",
+    "value": 110.00,
+    "manufacturer": "Haldiram's",
+    "model": "400g Pack",
+    "tags": ["snacks", "bhujia", "haldiram", "namkeen", "groceries"],
+    "notes": "Haldiram's Nagpur Bhujia Sev, crispy and mildly spiced chickpea flour noodles snack.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"h1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23dc2626\"/><stop offset=\"100%\" stop-color=\"%23991b1b\"/></linearGradient></defs><rect x=\"260\" y=\"100\" width=\"280\" height=\"300\" rx=\"20\" fill=\"url(%23h1)\" stroke=\"%23eab308\" stroke-width=\"4\"/><ellipse cx=\"400\" cy=\"270\" rx=\"100\" ry=\"70\" fill=\"%23facc15\" stroke=\"%23ffffff\" stroke-width=\"2\"/><text x=\"400\" y=\"170\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"30\" font-weight=\"900\" text-anchor=\"middle\">Haldiram's</text><text x=\"400\" y=\"265\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">BHUJIA</text><text x=\"400\" y=\"300\" fill=\"%23991b1b\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"bold\" text-anchor=\"middle\">SEV</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Haldiram's Nagpur Bhujia Sev</text></svg>"
+  },
+  {
+    "key": "dettol",
+    "name": "Dettol Liquid Handwash",
+    "category": "Indian Groceries",
+    "value": 99.00,
+    "manufacturer": "Reckitt",
+    "model": "200ml Refill",
+    "tags": ["hygiene", "handwash", "dettol", "soap", "groceries"],
+    "notes": "Dettol Liquid Handwash Original. Highly effective germ protection formula.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"d1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%2316a34a\"/><stop offset=\"100%\" stop-color=\"%2314532d\"/></linearGradient></defs><path d=\"M340,150 L460,150 L430,380 L370,380 Z\" fill=\"url(%23d1)\" stroke=\"%2316a34a\" stroke-width=\"4\"/><rect x=\"380\" y=\"90\" width=\"40\" height=\"60\" fill=\"%23ffffff\"/><path d=\"M360,90 L440,90 L400,60 Z\" fill=\"%23dc2626\"/><rect x=\"360\" y=\"220\" width=\"80\" height=\"80\" fill=\"%23ffffff\" rx=\"5\"/><path d=\"M400,230 L400,290 M370,260 L430,260\" stroke=\"%23dc2626\" stroke-width=\"12\"/><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Dettol Liquid Handwash Original</text></svg>"
+  }
+]
