@@ -162,121 +162,190 @@ def download_real_dataset_fallback(base_dir, classes):
             bg_color = colors.get(cls, (128, 128, 128))
             generate_synthetic_for_class(cls_dir, cls, bg_color, num_images=(20 - downloaded))
 
+def download_dataset_via_crawler(base_dir, classes):
+    """Downloads real-world images from Bing using icrawler."""
+    print("Downloading diverse real-world images from Bing using icrawler...")
+    from icrawler.builtin import BingImageCrawler
+    import json
+    
+    # Ensure base directory exists (do not delete so we can resume)
+    os.makedirs(base_dir, exist_ok=True)
+    
+    # Generate search queries dynamically from templates.json
+    search_queries = {
+        "unknown": ["office desk clutter", "wooden table surface", "hand holding phone", "soap bar package", "blank wall background"]
+    }
+    
+    templates_file = os.path.join(os.path.dirname(__file__), 'modules', 'templates.json')
+    if not os.path.exists(templates_file):
+        templates_file = "./modules/templates.json"
+        
+    try:
+        with open(templates_file, 'r', encoding='utf-8') as f:
+            templates_data = json.load(f)
+            for item in templates_data:
+                if item.get("category") == "Indian Groceries":
+                    key = item.get("key")
+                    name = item.get("name")
+                    # Clean name for searching
+                    cleaned_name = name.replace('"', '').replace('(', '').replace(')', '').replace('\'', '')
+                    search_queries[key] = [cleaned_name] # Single query to run crawler once
+    except Exception as e:
+        print(f"Error loading search queries dynamically: {e}")
+        
+    for cls in classes:
+        cls_dir = os.path.join(base_dir, cls)
+        if os.path.exists(cls_dir):
+            existing_files = [f for f in os.listdir(cls_dir) if os.path.isfile(os.path.join(cls_dir, f))]
+            if len(existing_files) >= 15:
+                print(f"Class '{cls}' already has {len(existing_files)} images. Skipping crawling.")
+                continue
+                
+        os.makedirs(cls_dir, exist_ok=True)
+        
+        queries = search_queries.get(cls, [f"{cls} package"])
+        print(f"\nCrawling images for class: {cls}...")
+        
+        # We download up to 15 images per class (with data augmentation, this is plenty and keeps training fast on CPU)
+        images_per_query = 15
+        downloaded_count = 0
+        
+        for q in queries:
+            if downloaded_count >= 15:
+                break
+                
+            temp_dir = os.path.join(base_dir, f"temp_{cls}_{q.replace(' ', '_')}")
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            try:
+                # Use Bing crawler with 3 threads for speed
+                crawler = BingImageCrawler(downloader_threads=3, storage={'root_dir': temp_dir}, log_level=50) # log_level=50 silences logs
+                crawler.crawl(keyword=q, max_num=images_per_query)
+                
+                # Move files from temp_dir to cls_dir and rename to avoid conflicts
+                for f in os.listdir(temp_dir):
+                    if downloaded_count >= 15:
+                        break
+                    src = os.path.join(temp_dir, f)
+                    if os.path.isfile(src):
+                        ext = os.path.splitext(f)[1].lower()
+                        if ext in ['.jpg', '.jpeg', '.png']:
+                            dest = os.path.join(cls_dir, f"img_{downloaded_count}{ext}")
+                            shutil.move(src, dest)
+                            downloaded_count += 1
+            except Exception as e:
+                print(f"  Crawler error for query '{q}': {e}")
+            finally:
+                # Clean up temp folder
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                
+        print(f"  Total crawled images for {cls}: {downloaded_count}")
+        
+        # If we didn't get enough images, generate synthetic shapes to top up
+        if downloaded_count < 10:
+            print(f"  Only got {downloaded_count} images. Generating synthetic fallbacks...")
+            generate_synthetic_for_class(cls_dir, cls, (128, 128, 128), num_images=(15 - downloaded_count))
+
 def main():
     dataset_dir = "./dataset"
-    classes = [
-        "amul_butter", "atta", "dettol", "haldirams", 
-        "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"
-    ]
     
-    # 1. Download dataset from Kaggle
+    # Dynamically load classes from templates.json
+    import json
+    templates_file = "./modules/templates.json"
+    if not os.path.exists(templates_file):
+        templates_file = "modules/templates.json"
+        
+    classes = []
+    try:
+        with open(templates_file, 'r', encoding='utf-8') as f:
+            templates_data = json.load(f)
+            for item in templates_data:
+                if item.get("category") == "Indian Groceries":
+                    classes.append(item.get("key"))
+    except Exception as e:
+        print(f"Error loading classes list: {e}")
+        
+    # Ensure standard fallbacks are included
+    for fallback in ["tata_salt", "maggi", "amul_butter", "atta", "dettol", "haldirams", "mustard_oil", "taj_mahal"]:
+        if fallback not in classes:
+            classes.append(fallback)
+            
+    classes.sort()
+    if "unknown" not in classes:
+        classes.append("unknown")
+        
+    print(f"Dynamic dataset classes loaded: {len(classes)} classes.")
+    
+    # 1. Skip Kaggle download as we use icrawler for large dynamic grocery lists
     download_success = False
-    if not os.path.exists(dataset_dir):
-        print("Dataset directory not found. Attempting to download from Kaggle...")
-        try:
-            import kaggle
-            print("Kaggle API found. Authenticating and downloading dataset 'themrityunjaypathak/indian-groceries-dataset'...")
-            kaggle.api.dataset_download_files(
-                'themrityunjaypathak/indian-groceries-dataset', 
-                path=dataset_dir, 
-                unzip=True
-            )
-            print("Download and extraction complete!")
-            download_success = True
-        except Exception as e:
-            print(f"Kaggle download failed: {e}")
-            print("Please ensure kaggle.json is correctly placed and configured.")
-    else:
-        print("Dataset directory already exists. Skipping download.")
-        download_success = True
-        
-    # Check if dataset actually contains images or folders, otherwise build fallback using DDG Lite + BigBasket
+    
+    # Check if dataset actually contains images or folders, otherwise build fallback using Bing Crawler
     if not download_success or not os.path.exists(dataset_dir) or len(os.listdir(dataset_dir)) == 0:
-        download_real_dataset_fallback(dataset_dir, classes)
+        download_dataset_via_crawler(dataset_dir, classes)
         
-    # 2. Load dataset
-    print("Loading and preprocessing dataset...")
-    img_size = (224, 224)
-    batch_size = 8
+    # 2. Get class names
+    print("Loading class names from dataset directory...")
+    class_names = sorted([d for d in os.listdir(dataset_dir) if os.path.isdir(os.path.join(dataset_dir, d))])
+    print(f"Dataset classes loaded: {len(class_names)} classes.")
     
-    # In case folders have slightly different names, map/list directories
-    actual_classes = [d for d in os.listdir(dataset_dir) if os.path.isdir(os.path.join(dataset_dir, d))]
-    print(f"Found directories: {actual_classes}")
-    
-    # Filter classes we want to map to (or use whatever is in dataset if custom)
-    if len(actual_classes) == 0:
-        print("Error: No class directories found.")
-        sys.exit(1)
-        
-    # Load training and validation sets
-    train_ds = tf.keras.utils.image_dataset_from_directory(
-        dataset_dir,
-        validation_split=0.2,
-        subset="training",
-        seed=123,
-        image_size=img_size,
-        batch_size=batch_size,
-        label_mode='categorical'
-    )
-    
-    val_ds = tf.keras.utils.image_dataset_from_directory(
-        dataset_dir,
-        validation_split=0.2,
-        subset="validation",
-        seed=123,
-        image_size=img_size,
-        batch_size=batch_size,
-        label_mode='categorical'
-    )
-    
-    class_names = train_ds.class_names
-    print(f"Dataset classes loaded: {class_names}")
-    
-    # Apply data augmentation pipeline to train_ds to expand dataset and prevent overfitting
-    print("Applying data augmentation pipeline to training dataset...")
-    data_augmentation = tf.keras.Sequential([
-        tf.keras.layers.RandomFlip("horizontal"),
-        tf.keras.layers.RandomRotation(0.15),
-        tf.keras.layers.RandomZoom(0.15),
-        tf.keras.layers.RandomTranslation(0.1, 0.1)
-    ])
-    train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
-    
-    # 3. Build Model (MobileNetV2 Transfer Learning)
-    print("Building transfer learning classifier with MobileNetV2...")
+    # 3. Build Prototypical Few-Shot Classifier with Pretrained MobileNetV2
+    print("Building Prototypical Few-Shot Classifier with MobileNetV2...")
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=(224, 224, 3),
         include_top=False,
-        weights='imagenet'
+        weights='imagenet',
+        pooling='avg'
     )
-    base_model.trainable = False  # Freeze pretrained weights for fast CPU training
+    base_model.trainable = False
     
-    # Build Keras sequential model
-    model = tf.keras.Sequential([
-        tf.keras.layers.Rescaling(1./127.5, offset=-1, input_shape=(224, 224, 3)), # MobileNetV2 input normalization
-        base_model,
-        tf.keras.layers.GlobalAveragePooling2D(),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(len(class_names), activation='softmax')
+    # Embedding model for extracting features
+    embedding_model = tf.keras.Sequential([
+        tf.keras.layers.Rescaling(1./127.5, offset=-1, input_shape=(224, 224, 3)),
+        base_model
     ])
     
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
+    print("Extracting class centroids...")
+    num_classes = len(class_names)
+    W = np.zeros((1280, num_classes), dtype=np.float32)
     
-    model.summary()
+    for idx, cls in enumerate(class_names):
+        cls_dir = os.path.join(dataset_dir, cls)
+        img_paths = [os.path.join(cls_dir, f) for f in os.listdir(cls_dir) if os.path.isfile(os.path.join(cls_dir, f))]
+        
+        embeddings = []
+        for img_path in img_paths:
+            try:
+                img = tf.keras.utils.load_img(img_path, target_size=(224, 224))
+                x = tf.keras.utils.img_to_array(img)
+                x = np.expand_dims(x, axis=0)
+                emb = embedding_model.predict(x, verbose=0)
+                embeddings.append(emb[0])
+            except Exception as e:
+                pass
+                
+        if len(embeddings) > 0:
+            mean_emb = np.mean(embeddings, axis=0)
+            norm = np.linalg.norm(mean_emb)
+            if norm > 0:
+                mean_emb = mean_emb / norm
+            W[:, idx] = mean_emb
+            print(f"  Class '{cls}': Extracted centroid from {len(embeddings)} images.")
+        else:
+            W[:, idx] = np.zeros(1280)
+            print(f"  Class '{cls}': Warning! No images found. Set to zero vector.")
+            
+    print("Centroids extracted successfully.")
     
-    # 4. Train Model
-    epochs = 5
-    print(f"Starting model training for {epochs} epochs...")
-    history = model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=epochs
-    )
+    # 4. Build the final classification model with centroids injected as weights of the Dense layer
+    model = tf.keras.Sequential([
+        tf.keras.layers.Rescaling(1./127.5, offset=-1, input_shape=(224, 224, 3)),
+        base_model,
+        tf.keras.layers.Dense(num_classes, use_bias=False, activation='softmax')
+    ])
+    
+    # Inject the centroids into the dense layer weights
+    model.layers[2].set_weights([W])
+    print("Injected L2-normalized centroids analytically into Dense classification layer weights.")
     
     # 5. Export to TensorFlow.js
     print("Converting model to TensorFlow.js web format...")
@@ -293,10 +362,8 @@ def main():
     except Exception as conv_err:
         print(f"tfjs export failed: {conv_err}")
         print("Attempting command line conversion fallback...")
-        # Save as keras model first
         keras_model_path = "./temp_keras_model.keras"
         model.save(keras_model_path)
-        # Use tfjs_converter command line
         os.system(f"tensorflowjs_converter --input_format=keras {keras_model_path} {output_dir}")
         if os.path.exists(keras_model_path):
             os.remove(keras_model_path)

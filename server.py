@@ -700,20 +700,41 @@ def api_ai_detect():
         center_crop = enhanced_img[sy:sy+size_h, sx:sx+size_w]
         
         class1, conf1 = classify_crop(center_crop)
-        class2, conf2 = classify_crop(enhanced_img)
         
-        if class1 != 'unknown' and conf1 >= conf2:
+        # Optimization: If center crop yields a confident match (>= 0.80), skip full image inference to save CPU
+        if class1 != 'unknown' and conf1 >= 0.80:
             detections.append({
                 "bbox": [sx, sy, sx+size_w, sy+size_h],
                 "class": class1,
                 "confidence": conf1
             })
-        elif class2 != 'unknown':
-            detections.append({
-                "bbox": [0, 0, cw, ch],
-                "class": class2,
-                "confidence": conf2
-            })
+        else:
+            class2, conf2 = classify_crop(enhanced_img)
+            if class1 != 'unknown' and class2 != 'unknown':
+                if conf1 >= conf2:
+                    detections.append({
+                        "bbox": [sx, sy, sx+size_w, sy+size_h],
+                        "class": class1,
+                        "confidence": conf1
+                    })
+                else:
+                    detections.append({
+                        "bbox": [0, 0, cw, ch],
+                        "class": class2,
+                        "confidence": conf2
+                    })
+            elif class2 != 'unknown':
+                detections.append({
+                    "bbox": [0, 0, cw, ch],
+                    "class": class2,
+                    "confidence": conf2
+                })
+            elif class1 != 'unknown':
+                detections.append({
+                    "bbox": [sx, sy, sx+size_w, sy+size_h],
+                    "class": class1,
+                    "confidence": conf1
+                })
                     
         # Determine if needs verification (any detection with confidence < 80% or no detections)
         needs_verification = False

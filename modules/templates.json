@@ -3,10 +3,15 @@
     "key": "macbook",
     "name": "Aether Book Pro 16\"",
     "category": "Electronics",
-    "value": 249900.00,
+    "value": 249900.0,
     "manufacturer": "AetherTech",
     "model": "AB-16-M3X",
-    "tags": ["laptop", "hardware", "executive", "silicon"],
+    "tags": [
+      "laptop",
+      "hardware",
+      "executive",
+      "silicon"
+    ],
     "notes": "CTO primary machine. Loaded with M3 Max equivalent configuration, 64GB RAM, 2TB SSD.",
     "image": "assets/macbook.png"
   },
@@ -14,10 +19,15 @@
     "key": "chair",
     "name": "Kinetic Ergonomic Mesh Chair",
     "category": "Office Gear",
-    "value": 45000.00,
+    "value": 45000.0,
     "manufacturer": "Herman Office",
     "model": "Aeron-Gen2",
-    "tags": ["furniture", "ergonomic", "office", "studio"],
+    "tags": [
+      "furniture",
+      "ergonomic",
+      "office",
+      "studio"
+    ],
     "notes": "Premium posture correction chair with adjustable armrests and mesh backing.",
     "image": "assets/chair.png"
   },
@@ -25,10 +35,15 @@
     "key": "camera",
     "name": "Aether Cine FX3 Camera",
     "category": "Media Equipment",
-    "value": 389900.00,
+    "value": 389900.0,
     "manufacturer": "Sone",
     "model": "ILME-FX3-A",
-    "tags": ["camera", "media", "video", "production"],
+    "tags": [
+      "camera",
+      "media",
+      "video",
+      "production"
+    ],
     "notes": "Full-frame Cinema line camera. Stored in moisture-controlled case with 50mm f/1.2 lens.",
     "image": "assets/camera.png"
   },
@@ -36,10 +51,15 @@
     "key": "headset",
     "name": "Prism VR-X Spatial Headset",
     "category": "Electronics",
-    "value": 310000.00,
+    "value": 310000.0,
     "manufacturer": "AetherTech",
     "model": "PRISM-VRX",
-    "tags": ["vr", "hardware", "spatial", "testing"],
+    "tags": [
+      "vr",
+      "hardware",
+      "spatial",
+      "testing"
+    ],
     "notes": "Used by the spatial software development team. Calibrated for 90Hz eye-tracking.",
     "image": "assets/headset.png"
   },
@@ -47,10 +67,15 @@
     "key": "microscope",
     "name": "BioScan-X Digital Microscope",
     "category": "Laboratory",
-    "value": 780000.00,
+    "value": 780000.0,
     "manufacturer": "Optika Labs",
     "model": "BSX-5000",
-    "tags": ["lab", "microscope", "research", "optical"],
+    "tags": [
+      "lab",
+      "microscope",
+      "research",
+      "optical"
+    ],
     "notes": "Digital optical microscope with 5000x magnification and USB capture output.",
     "image": "assets/microscope.png"
   },
@@ -58,99 +83,1704 @@
     "key": "smartphone",
     "name": "Aether Phone 15 Pro",
     "category": "Electronics",
-    "value": 134900.00,
+    "value": 134900.0,
     "manufacturer": "AetherTech",
     "model": "AP-15-PRO",
-    "tags": ["phone", "mobile", "electronics", "hardware"],
+    "tags": [
+      "phone",
+      "mobile",
+      "electronics",
+      "hardware"
+    ],
     "notes": "Aether Phone 15 Pro edition with titanium chassis.",
     "image": "assets/smartphone.png"
   },
   {
-    "key": "tata_salt",
-    "name": "Tata Salt",
+    "key": "turmeric_powder",
+    "name": "Haldi (Turmeric Powder)",
     "category": "Indian Groceries",
-    "value": 28.00,
-    "manufacturer": "Tata Consumer Products",
-    "model": "1kg Pack",
-    "tags": ["salt", "groceries", "tata", "iodized", "cooking"],
-    "notes": "Tata Salt Vacuum Evaporated Iodized Salt. Desh Ka Namak.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"s1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%233b82f6\"/><stop offset=\"100%\" stop-color=\"%231d4ed8\"/></linearGradient></defs><rect x=\"280\" y=\"100\" width=\"240\" height=\"300\" rx=\"20\" fill=\"url(%23s1)\" stroke=\"%233b82f6\" stroke-width=\"4\"/><path d=\"M280,220 C320,200 480,240 520,220 L520,380 C480,390 320,370 280,380 Z\" fill=\"%23ffffff\" opacity=\"0.9\"/><text x=\"400\" y=\"160\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"28\" font-weight=\"bold\" text-anchor=\"middle\">TATA</text><text x=\"400\" y=\"280\" fill=\"%231e3a8a\" font-family=\"sans-serif\" font-size=\"32\" font-weight=\"900\" text-anchor=\"middle\">SALT</text><text x=\"400\" y=\"320\" fill=\"%231d4ed8\" font-family=\"sans-serif\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\">IODIZED SALT</text><circle cx=\"400\" cy=\"440\" r=\"12\" fill=\"%23ffffff\"/><text x=\"400\" y=\"470\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Tata Salt - Desh Ka Namak</text></svg>"
+    "value": 35.0,
+    "manufacturer": "Catch",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "haldi",
+      "turmeric",
+      "cooking"
+    ],
+    "notes": "Haldi (Turmeric Powder) by Catch (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>turmeric_pow</text></svg>"
   },
   {
-    "key": "maggi",
+    "key": "chilli_powder",
+    "name": "Red Chilli Powder",
+    "category": "Indian Groceries",
+    "value": 45.0,
+    "manufacturer": "MDH",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "chilli",
+      "spicy",
+      "cooking"
+    ],
+    "notes": "Red Chilli Powder by MDH (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>chilli_powde</text></svg>"
+  },
+  {
+    "key": "coriander_powder",
+    "name": "Dhania (Coriander Powder)",
+    "category": "Indian Groceries",
+    "value": 32.0,
+    "manufacturer": "Everest",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "dhania",
+      "coriander",
+      "cooking"
+    ],
+    "notes": "Dhania (Coriander Powder) by Everest (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>coriander_po</text></svg>"
+  },
+  {
+    "key": "cumin_seeds",
+    "name": "Jeera (Cumin Seeds)",
+    "category": "Indian Groceries",
+    "value": 65.0,
+    "manufacturer": "Catch",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "jeera",
+      "cumin",
+      "cooking"
+    ],
+    "notes": "Jeera (Cumin Seeds) by Catch (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>cumin_seeds</text></svg>"
+  },
+  {
+    "key": "mustard_seeds",
+    "name": "Rai (Mustard Seeds)",
+    "category": "Indian Groceries",
+    "value": 25.0,
+    "manufacturer": "MDH",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "rai",
+      "mustard",
+      "cooking"
+    ],
+    "notes": "Rai (Mustard Seeds) by MDH (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>mustard_seed</text></svg>"
+  },
+  {
+    "key": "garam_masala",
+    "name": "Everest Garam Masala",
+    "category": "Indian Groceries",
+    "value": 78.0,
+    "manufacturer": "Everest",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "masala",
+      "garam masala",
+      "cooking"
+    ],
+    "notes": "Everest Garam Masala by Everest (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>garam_masala</text></svg>"
+  },
+  {
+    "key": "cardamom",
+    "name": "Green Cardamom (Elaichi)",
+    "category": "Indian Groceries",
+    "value": 140.0,
+    "manufacturer": "Keya",
+    "model": "50g Pack",
+    "tags": [
+      "spice",
+      "elaichi",
+      "cardamom",
+      "aromatic"
+    ],
+    "notes": "Green Cardamom (Elaichi) by Keya (50g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>cardamom</text></svg>"
+  },
+  {
+    "key": "cloves",
+    "name": "Cloves (Laung)",
+    "category": "Indian Groceries",
+    "value": 85.0,
+    "manufacturer": "Keya",
+    "model": "50g Pack",
+    "tags": [
+      "spice",
+      "laung",
+      "cloves",
+      "cooking"
+    ],
+    "notes": "Cloves (Laung) by Keya (50g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>cloves</text></svg>"
+  },
+  {
+    "key": "cinnamon",
+    "name": "Cinnamon Sticks (Dalchini)",
+    "category": "Indian Groceries",
+    "value": 55.0,
+    "manufacturer": "Catch",
+    "model": "50g Pack",
+    "tags": [
+      "spice",
+      "dalchini",
+      "cinnamon",
+      "cooking"
+    ],
+    "notes": "Cinnamon Sticks (Dalchini) by Catch (50g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>cinnamon</text></svg>"
+  },
+  {
+    "key": "black_pepper",
+    "name": "Black Pepper (Kali Mirch)",
+    "category": "Indian Groceries",
+    "value": 95.0,
+    "manufacturer": "Everest",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "pepper",
+      "kali mirch",
+      "cooking"
+    ],
+    "notes": "Black Pepper (Kali Mirch) by Everest (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>black_pepper</text></svg>"
+  },
+  {
+    "key": "asafoetida",
+    "name": "Hing (Asafoetida)",
+    "category": "Indian Groceries",
+    "value": 60.0,
+    "manufacturer": "Patanjali",
+    "model": "25g Pack",
+    "tags": [
+      "spice",
+      "hing",
+      "asafoetida",
+      "cooking"
+    ],
+    "notes": "Hing (Asafoetida) by Patanjali (25g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>asafoetida</text></svg>"
+  },
+  {
+    "key": "fenugreek",
+    "name": "Methi Seeds (Fenugreek)",
+    "category": "Indian Groceries",
+    "value": 22.0,
+    "manufacturer": "MDH",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "methi",
+      "fenugreek",
+      "cooking"
+    ],
+    "notes": "Methi Seeds (Fenugreek) by MDH (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>fenugreek</text></svg>"
+  },
+  {
+    "key": "fennel_seeds",
+    "name": "Saunf (Fennel Seeds)",
+    "category": "Indian Groceries",
+    "value": 30.0,
+    "manufacturer": "Catch",
+    "model": "100g Pack",
+    "tags": [
+      "spice",
+      "saunf",
+      "fennel",
+      "digestive"
+    ],
+    "notes": "Saunf (Fennel Seeds) by Catch (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>fennel_seeds</text></svg>"
+  },
+  {
+    "key": "bay_leaves",
+    "name": "Tejpatta (Bay Leaves)",
+    "category": "Indian Groceries",
+    "value": 15.0,
+    "manufacturer": "Everest",
+    "model": "20g Pack",
+    "tags": [
+      "spice",
+      "tejpatta",
+      "bay leaves",
+      "cooking"
+    ],
+    "notes": "Tejpatta (Bay Leaves) by Everest (20g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>bay_leaves</text></svg>"
+  },
+  {
+    "key": "toor_dal",
+    "name": "Tata Sampann Toor Dal",
+    "category": "Indian Groceries",
+    "value": 180.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "dal",
+      "pulses",
+      "toor",
+      "protein"
+    ],
+    "notes": "Tata Sampann Toor Dal by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>toor_dal</text></svg>"
+  },
+  {
+    "key": "chana_dal",
+    "name": "Chana Dal",
+    "category": "Indian Groceries",
+    "value": 110.0,
+    "manufacturer": "Fortune",
+    "model": "1kg Pack",
+    "tags": [
+      "dal",
+      "pulses",
+      "chana",
+      "protein"
+    ],
+    "notes": "Chana Dal by Fortune (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>chana_dal</text></svg>"
+  },
+  {
+    "key": "moong_dal",
+    "name": "Moong Dal Split",
+    "category": "Indian Groceries",
+    "value": 165.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "dal",
+      "pulses",
+      "moong",
+      "protein"
+    ],
+    "notes": "Moong Dal Split by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>moong_dal</text></svg>"
+  },
+  {
+    "key": "urad_dal",
+    "name": "Urad Dal White",
+    "category": "Indian Groceries",
+    "value": 150.0,
+    "manufacturer": "Fortune",
+    "model": "1kg Pack",
+    "tags": [
+      "dal",
+      "pulses",
+      "urad",
+      "protein"
+    ],
+    "notes": "Urad Dal White by Fortune (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>urad_dal</text></svg>"
+  },
+  {
+    "key": "masoor_dal",
+    "name": "Red Masoor Dal",
+    "category": "Indian Groceries",
+    "value": 120.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "dal",
+      "pulses",
+      "masoor",
+      "protein"
+    ],
+    "notes": "Red Masoor Dal by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>masoor_dal</text></svg>"
+  },
+  {
+    "key": "kabuli_chana",
+    "name": "Kabuli Chana (Chole)",
+    "category": "Indian Groceries",
+    "value": 160.0,
+    "manufacturer": "Fortune",
+    "model": "1kg Pack",
+    "tags": [
+      "chana",
+      "pulses",
+      "kabuli",
+      "protein"
+    ],
+    "notes": "Kabuli Chana (Chole) by Fortune (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>kabuli_chana</text></svg>"
+  },
+  {
+    "key": "kala_chana",
+    "name": "Kala Chana (Brown Chickpeas)",
+    "category": "Indian Groceries",
+    "value": 95.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "chana",
+      "pulses",
+      "kala chana",
+      "protein"
+    ],
+    "notes": "Kala Chana (Brown Chickpeas) by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>kala_chana</text></svg>"
+  },
+  {
+    "key": "rajma",
+    "name": "Rajma Chitra (Kidney Beans)",
+    "category": "Indian Groceries",
+    "value": 175.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "rajma",
+      "pulses",
+      "kidney beans",
+      "protein"
+    ],
+    "notes": "Rajma Chitra (Kidney Beans) by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>rajma</text></svg>"
+  },
+  {
+    "key": "green_peas",
+    "name": "Dried Green Peas (Matar)",
+    "category": "Indian Groceries",
+    "value": 80.0,
+    "manufacturer": "Fortune",
+    "model": "1kg Pack",
+    "tags": [
+      "matar",
+      "pulses",
+      "peas",
+      "cooking"
+    ],
+    "notes": "Dried Green Peas (Matar) by Fortune (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>green_peas</text></svg>"
+  },
+  {
+    "key": "lobia",
+    "name": "Lobia (Black Eyed Peas)",
+    "category": "Indian Groceries",
+    "value": 115.0,
+    "manufacturer": "Tata Sampann",
+    "model": "1kg Pack",
+    "tags": [
+      "lobia",
+      "pulses",
+      "beans",
+      "protein"
+    ],
+    "notes": "Lobia (Black Eyed Peas) by Tata Sampann (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>lobia</text></svg>"
+  },
+  {
+    "key": "atta_flour",
+    "name": "Aashirvaad Shudh Chakki Atta",
+    "category": "Indian Groceries",
+    "value": 460.0,
+    "manufacturer": "ITC",
+    "model": "10kg Bag",
+    "tags": [
+      "atta",
+      "flour",
+      "wheat",
+      "roti"
+    ],
+    "notes": "Aashirvaad Shudh Chakki Atta by ITC (10kg Bag). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>atta_flour</text></svg>"
+  },
+  {
+    "key": "maida_flour",
+    "name": "Fortune Maida",
+    "category": "Indian Groceries",
+    "value": 45.0,
+    "manufacturer": "Fortune",
+    "model": "1kg Pack",
+    "tags": [
+      "maida",
+      "flour",
+      "refined wheat"
+    ],
+    "notes": "Fortune Maida by Fortune (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>maida_flour</text></svg>"
+  },
+  {
+    "key": "suji",
+    "name": "Rajdhani Suji (Semolina)",
+    "category": "Indian Groceries",
+    "value": 52.0,
+    "manufacturer": "Rajdhani",
+    "model": "1kg Pack",
+    "tags": [
+      "suji",
+      "semolina",
+      "rawa",
+      "breakfast"
+    ],
+    "notes": "Rajdhani Suji (Semolina) by Rajdhani (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>suji</text></svg>"
+  },
+  {
+    "key": "besan",
+    "name": "Rajdhani Besan (Gram Flour)",
+    "category": "Indian Groceries",
+    "value": 90.0,
+    "manufacturer": "Rajdhani",
+    "model": "1kg Pack",
+    "tags": [
+      "besan",
+      "flour",
+      "gram flour",
+      "cooking"
+    ],
+    "notes": "Rajdhani Besan (Gram Flour) by Rajdhani (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>besan</text></svg>"
+  },
+  {
+    "key": "rice_flour",
+    "name": "Double Horse Rice Flour",
+    "category": "Indian Groceries",
+    "value": 65.0,
+    "manufacturer": "Double Horse",
+    "model": "1kg Pack",
+    "tags": [
+      "rice flour",
+      "flour",
+      "gluten free"
+    ],
+    "notes": "Double Horse Rice Flour by Double Horse (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>rice_flour</text></svg>"
+  },
+  {
+    "key": "basmati_rice",
+    "name": "Daawat Rozana Basmati Rice",
+    "category": "Indian Groceries",
+    "value": 115.0,
+    "manufacturer": "Daawat",
+    "model": "1kg Pack",
+    "tags": [
+      "rice",
+      "basmati",
+      "Rozana",
+      "biryani"
+    ],
+    "notes": "Daawat Rozana Basmati Rice by Daawat (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>basmati_rice</text></svg>"
+  },
+  {
+    "key": "sona_masuri",
+    "name": "Fortune Sona Masoori Rice",
+    "category": "Indian Groceries",
+    "value": 325.0,
+    "manufacturer": "Fortune",
+    "model": "5kg Bag",
+    "tags": [
+      "rice",
+      "sona masoori",
+      "grain",
+      "staple"
+    ],
+    "notes": "Fortune Sona Masoori Rice by Fortune (5kg Bag). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>sona_masuri</text></svg>"
+  },
+  {
+    "key": "poha",
+    "name": "Rajdhani Thick Poha",
+    "category": "Indian Groceries",
+    "value": 58.0,
+    "manufacturer": "Rajdhani",
+    "model": "1kg Pack",
+    "tags": [
+      "poha",
+      "rice",
+      "flattened rice",
+      "breakfast"
+    ],
+    "notes": "Rajdhani Thick Poha by Rajdhani (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>poha</text></svg>"
+  },
+  {
+    "key": "sabudana",
+    "name": "Sago (Sabudana)",
+    "category": "Indian Groceries",
+    "value": 85.0,
+    "manufacturer": "Rajdhani",
+    "model": "1kg Pack",
+    "tags": [
+      "sabudana",
+      "sago",
+      "tapioca",
+      "fasting"
+    ],
+    "notes": "Sago (Sabudana) by Rajdhani (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>sabudana</text></svg>"
+  },
+  {
+    "key": "lays_chips",
+    "name": "Lays American Style Cream & Onion",
+    "category": "Indian Groceries",
+    "value": 20.0,
+    "manufacturer": "Pepsico",
+    "model": "50g Pack",
+    "tags": [
+      "lays",
+      "chips",
+      "snacks",
+      "potato"
+    ],
+    "notes": "Lays American Style Cream & Onion by Pepsico (50g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>lays_chips</text></svg>"
+  },
+  {
+    "key": "kurkure",
+    "name": "Kurkure Masala Munch",
+    "category": "Indian Groceries",
+    "value": 20.0,
+    "manufacturer": "Pepsico",
+    "model": "82g Pack",
+    "tags": [
+      "kurkure",
+      "snacks",
+      "spicy",
+      "namkeen"
+    ],
+    "notes": "Kurkure Masala Munch by Pepsico (82g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>kurkure</text></svg>"
+  },
+  {
+    "key": "haldirams_bhujia",
+    "name": "Haldiram's Bhujia Sev",
+    "category": "Indian Groceries",
+    "value": 110.0,
+    "manufacturer": "Haldirams",
+    "model": "400g Pack",
+    "tags": [
+      "snacks",
+      "bhujia",
+      "haldirams",
+      "namkeen"
+    ],
+    "notes": "Haldiram's Bhujia Sev by Haldirams (400g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>haldirams_bh</text></svg>"
+  },
+  {
+    "key": "maggi_noodles",
     "name": "Maggi 2-Minute Noodles",
     "category": "Indian Groceries",
-    "value": 14.00,
+    "value": 14.0,
     "manufacturer": "Nestle",
     "model": "70g Pack",
-    "tags": ["noodles", "groceries", "nestle", "snacks", "instant"],
-    "notes": "Maggi 2-Minute Instant Noodles, Masala flavor. Quick and easy snack.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"m1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23eab308\"/><stop offset=\"100%\" stop-color=\"%23ca8a04\"/></linearGradient></defs><rect x=\"260\" y=\"120\" width=\"280\" height=\"260\" rx=\"15\" fill=\"url(%23m1)\" stroke=\"%23eab308\" stroke-width=\"4\"/><rect x=\"300\" y=\"160\" width=\"200\" height=\"80\" rx=\"8\" fill=\"%23dc2626\"/><text x=\"400\" y=\"215\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">Maggi</text><text x=\"400\" y=\"290\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" text-anchor=\"middle\">2-Minute</text><text x=\"400\" y=\"325\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"18\" font-weight=\"bold\" text-anchor=\"middle\">MASALA NOODLES</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Nestle Maggi Instant Noodles</text></svg>"
+    "tags": [
+      "maggi",
+      "noodles",
+      "instant",
+      "snacks"
+    ],
+    "notes": "Maggi 2-Minute Noodles by Nestle (70g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>maggi_noodle</text></svg>"
+  },
+  {
+    "key": "yippee_noodles",
+    "name": "Sunfeast Yippee Noodles",
+    "category": "Indian Groceries",
+    "value": 15.0,
+    "manufacturer": "ITC",
+    "model": "70g Pack",
+    "tags": [
+      "noodles",
+      "yippee",
+      "instant",
+      "snacks"
+    ],
+    "notes": "Sunfeast Yippee Noodles by ITC (70g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>yippee_noodl</text></svg>"
+  },
+  {
+    "key": "knorr_soup",
+    "name": "Knorr Mixed Vegetable Soup",
+    "category": "Indian Groceries",
+    "value": 55.0,
+    "manufacturer": "HUL",
+    "model": "45g Pack",
+    "tags": [
+      "soup",
+      "knorr",
+      "instant",
+      "vegetable"
+    ],
+    "notes": "Knorr Mixed Vegetable Soup by HUL (45g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>knorr_soup</text></svg>"
+  },
+  {
+    "key": "britannia_biscuits",
+    "name": "Britannia Good Day Butter Biscuits",
+    "category": "Indian Groceries",
+    "value": 30.0,
+    "manufacturer": "Britannia",
+    "model": "200g Pack",
+    "tags": [
+      "biscuits",
+      "good day",
+      "britannia",
+      "butter"
+    ],
+    "notes": "Britannia Good Day Butter Biscuits by Britannia (200g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>britannia_bi</text></svg>"
+  },
+  {
+    "key": "parle_g",
+    "name": "Parle-G Gold Biscuits",
+    "category": "Indian Groceries",
+    "value": 10.0,
+    "manufacturer": "Parle",
+    "model": "110g Pack",
+    "tags": [
+      "parle",
+      "parle g",
+      "biscuits",
+      "tea snack"
+    ],
+    "notes": "Parle-G Gold Biscuits by Parle (110g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>parle_g</text></svg>"
+  },
+  {
+    "key": "marie_gold",
+    "name": "Britannia Marie Gold",
+    "category": "Indian Groceries",
+    "value": 35.0,
+    "manufacturer": "Britannia",
+    "model": "250g Pack",
+    "tags": [
+      "biscuits",
+      "marie gold",
+      "tea snack"
+    ],
+    "notes": "Britannia Marie Gold by Britannia (250g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>marie_gold</text></svg>"
+  },
+  {
+    "key": "good_day",
+    "name": "Good Day Cashew Biscuits",
+    "category": "Indian Groceries",
+    "value": 40.0,
+    "manufacturer": "Britannia",
+    "model": "200g Pack",
+    "tags": [
+      "biscuits",
+      "good day",
+      "cashew",
+      "snacks"
+    ],
+    "notes": "Good Day Cashew Biscuits by Britannia (200g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>good_day</text></svg>"
+  },
+  {
+    "key": "oreo",
+    "name": "Oreo Vanilla Cream Biscuits",
+    "category": "Indian Groceries",
+    "value": 35.0,
+    "manufacturer": "Cadbury",
+    "model": "120g Pack",
+    "tags": [
+      "biscuits",
+      "oreo",
+      "chocolate",
+      "vanilla"
+    ],
+    "notes": "Oreo Vanilla Cream Biscuits by Cadbury (120g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>oreo</text></svg>"
+  },
+  {
+    "key": "hide_and_seek",
+    "name": "Parle Hide & Seek Chocolate Chips",
+    "category": "Indian Groceries",
+    "value": 50.0,
+    "manufacturer": "Parle",
+    "model": "120g Pack",
+    "tags": [
+      "biscuits",
+      "chocolate",
+      "cookies",
+      "hide and seek"
+    ],
+    "notes": "Parle Hide & Seek Chocolate Chips by Parle (120g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>hide_and_see</text></svg>"
   },
   {
     "key": "amul_butter",
     "name": "Amul Butter",
     "category": "Indian Groceries",
-    "value": 275.00,
+    "value": 275.0,
     "manufacturer": "Amul",
-    "model": "500g Pack",
-    "tags": ["butter", "dairy", "amul", "groceries", "spread"],
-    "notes": "Amul Pasteurised Salted Butter. Utterly Butterly Delicious.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"b1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23fef08a\"/><stop offset=\"100%\" stop-color=\"%23facc15\"/></linearGradient></defs><rect x=\"250\" y=\"110\" width=\"300\" height=\"280\" rx=\"12\" fill=\"url(%23b1)\" stroke=\"%23facc15\" stroke-width=\"4\"/><rect x=\"280\" y=\"150\" width=\"240\" height=\"80\" rx=\"6\" fill=\"%232563eb\"/><text x=\"400\" y=\"205\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"40\" font-weight=\"900\" text-anchor=\"middle\">Amul</text><text x=\"400\" y=\"280\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">BUTTER</text><text x=\"400\" y=\"320\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Pasteurised Salted</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Amul butter - Utterly Butterly Delicious</text></svg>"
+    "model": "500g Box",
+    "tags": [
+      "butter",
+      "dairy",
+      "amul",
+      "spread"
+    ],
+    "notes": "Amul Butter by Amul (500g Box). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>amul_butter</text></svg>"
   },
   {
-    "key": "atta",
-    "name": "Aashirvaad Shudh Chakki Atta",
+    "key": "amul_cheese",
+    "name": "Amul Cheese Slices",
     "category": "Indian Groceries",
-    "value": 460.00,
-    "manufacturer": "ITC Limited",
-    "model": "10kg Pack",
-    "tags": ["atta", "flour", "wheat", "groceries", "roti"],
-    "notes": "Aashirvaad Shudh Chakki Whole Wheat Atta. 100% pure wheat flour.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"a1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23ea580c\"/><stop offset=\"100%\" stop-color=\"%23c2410c\"/></linearGradient></defs><rect x=\"270\" y=\"90\" width=\"260\" height=\"320\" rx=\"25\" fill=\"url(%23a1)\" stroke=\"%23ea580c\" stroke-width=\"4\"/><rect x=\"300\" y=\"130\" width=\"200\" height=\"60\" rx=\"5\" fill=\"%23ffffff\"/><text x=\"400\" y=\"172\" fill=\"%23c2410c\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"900\" text-anchor=\"middle\">AASHIRVAAD</text><text x=\"400\" y=\"240\" fill=\"%23fef08a\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">ATTA</text><text x=\"400\" y=\"300\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"18\" font-weight=\"bold\" text-anchor=\"middle\">Shudh Chakki</text><path d=\"M380,330 L400,310 L420,330 M380,350 L400,330 L420,350\" stroke=\"%23fef08a\" stroke-width=\"3\" fill=\"none\"/><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Aashirvaad Whole Wheat Atta</text></svg>"
+    "value": 140.0,
+    "manufacturer": "Amul",
+    "model": "100g 5-Pack",
+    "tags": [
+      "cheese",
+      "dairy",
+      "amul",
+      "slices"
+    ],
+    "notes": "Amul Cheese Slices by Amul (100g 5-Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>amul_cheese</text></svg>"
+  },
+  {
+    "key": "paneer",
+    "name": "Amul Malai Paneer",
+    "category": "Indian Groceries",
+    "value": 90.0,
+    "manufacturer": "Amul",
+    "model": "200g Pack",
+    "tags": [
+      "paneer",
+      "dairy",
+      "cottage cheese",
+      "cooking"
+    ],
+    "notes": "Amul Malai Paneer by Amul (200g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>paneer</text></svg>"
+  },
+  {
+    "key": "ghee",
+    "name": "Amul Pure Cow Ghee",
+    "category": "Indian Groceries",
+    "value": 680.0,
+    "manufacturer": "Amul",
+    "model": "1L Tin",
+    "tags": [
+      "ghee",
+      "cow ghee",
+      "dairy",
+      "cooking"
+    ],
+    "notes": "Amul Pure Cow Ghee by Amul (1L Tin). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>ghee</text></svg>"
+  },
+  {
+    "key": "curd",
+    "name": "Amul Masti Dahi",
+    "category": "Indian Groceries",
+    "value": 35.0,
+    "manufacturer": "Amul",
+    "model": "400g Cup",
+    "tags": [
+      "curd",
+      "dahi",
+      "dairy",
+      "amul"
+    ],
+    "notes": "Amul Masti Dahi by Amul (400g Cup). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>curd</text></svg>"
+  },
+  {
+    "key": "fresh_cream",
+    "name": "Amul Fresh Cream",
+    "category": "Indian Groceries",
+    "value": 67.0,
+    "manufacturer": "Amul",
+    "model": "250ml Pack",
+    "tags": [
+      "cream",
+      "fresh cream",
+      "dairy",
+      "cooking"
+    ],
+    "notes": "Amul Fresh Cream by Amul (250ml Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>fresh_cream</text></svg>"
+  },
+  {
+    "key": "condensed_milk",
+    "name": "Amul Mithai Mate (Condensed)",
+    "category": "Indian Groceries",
+    "value": 62.0,
+    "manufacturer": "Amul",
+    "model": "200g Can",
+    "tags": [
+      "condensed milk",
+      "dairy",
+      "sweetener",
+      "dessert"
+    ],
+    "notes": "Amul Mithai Mate (Condensed) by Amul (200g Can). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>condensed_mi</text></svg>"
+  },
+  {
+    "key": "peanut_butter",
+    "name": "Pintola All Natural Peanut Butter",
+    "category": "Indian Groceries",
+    "value": 165.0,
+    "manufacturer": "Pintola",
+    "model": "350g Jar",
+    "tags": [
+      "peanut butter",
+      "spread",
+      "protein",
+      "healthy"
+    ],
+    "notes": "Pintola All Natural Peanut Butter by Pintola (350g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>peanut_butte</text></svg>"
+  },
+  {
+    "key": "jam",
+    "name": "Kissan Mixed Fruit Jam",
+    "category": "Indian Groceries",
+    "value": 185.0,
+    "manufacturer": "Kissan",
+    "model": "700g Jar",
+    "tags": [
+      "jam",
+      "fruit jam",
+      "spread",
+      "kissan"
+    ],
+    "notes": "Kissan Mixed Fruit Jam by Kissan (700g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>jam</text></svg>"
+  },
+  {
+    "key": "red_label",
+    "name": "Brooke Bond Red Label Tea",
+    "category": "Indian Groceries",
+    "value": 175.0,
+    "manufacturer": "HUL",
+    "model": "500g Pack",
+    "tags": [
+      "tea",
+      "beverage",
+      "red label",
+      "chai"
+    ],
+    "notes": "Brooke Bond Red Label Tea by HUL (500g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>red_label</text></svg>"
+  },
+  {
+    "key": "taj_mahal_tea",
+    "name": "Brooke Bond Taj Mahal Tea",
+    "category": "Indian Groceries",
+    "value": 350.0,
+    "manufacturer": "HUL",
+    "model": "500g Pack",
+    "tags": [
+      "tea",
+      "taj mahal",
+      "beverage",
+      "premium chai"
+    ],
+    "notes": "Brooke Bond Taj Mahal Tea by HUL (500g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>taj_mahal_te</text></svg>"
+  },
+  {
+    "key": "tata_tea",
+    "name": "Tata Tea Premium",
+    "category": "Indian Groceries",
+    "value": 160.0,
+    "manufacturer": "Tata Consumer",
+    "model": "500g Pack",
+    "tags": [
+      "tea",
+      "tata tea",
+      "beverage",
+      "chai"
+    ],
+    "notes": "Tata Tea Premium by Tata Consumer (500g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>tata_tea</text></svg>"
+  },
+  {
+    "key": "nescafe",
+    "name": "Nescafe Classic Instant Coffee",
+    "category": "Indian Groceries",
+    "value": 185.0,
+    "manufacturer": "Nestle",
+    "model": "50g Glass Jar",
+    "tags": [
+      "coffee",
+      "instant coffee",
+      "nescafe",
+      "beverage"
+    ],
+    "notes": "Nescafe Classic Instant Coffee by Nestle (50g Glass Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>nescafe</text></svg>"
+  },
+  {
+    "key": "bru",
+    "name": "Bru Instant Coffee",
+    "category": "Indian Groceries",
+    "value": 160.0,
+    "manufacturer": "HUL",
+    "model": "100g Pack",
+    "tags": [
+      "coffee",
+      "instant coffee",
+      "bru",
+      "beverage"
+    ],
+    "notes": "Bru Instant Coffee by HUL (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>bru</text></svg>"
+  },
+  {
+    "key": "horlicks",
+    "name": "Horlicks Classic Malt",
+    "category": "Indian Groceries",
+    "value": 285.0,
+    "manufacturer": "HUL",
+    "model": "500g Jar",
+    "tags": [
+      "horlicks",
+      "health drink",
+      "beverage",
+      "nutrition"
+    ],
+    "notes": "Horlicks Classic Malt by HUL (500g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>horlicks</text></svg>"
+  },
+  {
+    "key": "boost",
+    "name": "Boost Health Drink",
+    "category": "Indian Groceries",
+    "value": 290.0,
+    "manufacturer": "HUL",
+    "model": "500g Jar",
+    "tags": [
+      "boost",
+      "health drink",
+      "beverage",
+      "nutrition"
+    ],
+    "notes": "Boost Health Drink by HUL (500g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>boost</text></svg>"
+  },
+  {
+    "key": "bournvita",
+    "name": "Cadbury Bournvita Chocolate",
+    "category": "Indian Groceries",
+    "value": 275.0,
+    "manufacturer": "Mondelez",
+    "model": "500g Jar",
+    "tags": [
+      "bournvita",
+      "health drink",
+      "chocolate",
+      "beverage"
+    ],
+    "notes": "Cadbury Bournvita Chocolate by Mondelez (500g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>bournvita</text></svg>"
+  },
+  {
+    "key": "complan",
+    "name": "Complan Royale Chocolate",
+    "category": "Indian Groceries",
+    "value": 310.0,
+    "manufacturer": "Heinz",
+    "model": "500g Jar",
+    "tags": [
+      "complan",
+      "health drink",
+      "chocolate",
+      "beverage"
+    ],
+    "notes": "Complan Royale Chocolate by Heinz (500g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>complan</text></svg>"
   },
   {
     "key": "mustard_oil",
-    "name": "Fortune Mustard Oil",
+    "name": "Fortune Kachi Ghani Mustard Oil",
     "category": "Indian Groceries",
-    "value": 175.00,
-    "manufacturer": "Adani Wilmar",
+    "value": 175.0,
+    "manufacturer": "Fortune",
     "model": "1L Bottle",
-    "tags": ["oil", "mustard", "cooking", "fortune", "groceries"],
-    "notes": "Fortune Kachi Ghani Pure Mustard Oil. Premium mustard oil for traditional cooking.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"o1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23ca8a04\"/><stop offset=\"100%\" stop-color=\"%23854d0e\"/></linearGradient></defs><rect x=\"310\" y=\"80\" width=\"180\" height=\"320\" rx=\"40\" fill=\"url(%23o1)\" stroke=\"%23eab308\" stroke-width=\"3\"/><rect x=\"360\" y=\"30\" width=\"80\" height=\"50\" rx=\"5\" fill=\"%23dc2626\"/><rect x=\"330\" y=\"160\" width=\"140\" height=\"120\" rx=\"4\" fill=\"%23ffffff\"/><text x=\"400\" y=\"200\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">Fortune</text><text x=\"400\" y=\"230\" fill=\"%23854d0e\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Kachi Ghani</text><text x=\"400\" y=\"260\" fill=\"%231e293b\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\">MUSTARD OIL</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Fortune Kachi Ghani Mustard Oil</text></svg>"
+    "tags": [
+      "oil",
+      "mustard oil",
+      "cooking oil",
+      "mustard"
+    ],
+    "notes": "Fortune Kachi Ghani Mustard Oil by Fortune (1L Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>mustard_oil</text></svg>"
   },
   {
-    "key": "taj_mahal",
-    "name": "Taj Mahal Tea",
+    "key": "sunflower_oil",
+    "name": "Fortune Sunlite Sunflower Oil",
     "category": "Indian Groceries",
-    "value": 350.00,
-    "manufacturer": "Hindustan Unilever",
-    "model": "500g Box",
-    "tags": ["tea", "beverage", "taj mahal", "hul", "groceries"],
-    "notes": "Brooke Bond Taj Mahal Tea loose leaves. Unique flavor with rich aroma.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"t1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%231e1b4b\"/><stop offset=\"100%\" stop-color=\"%230f172a\"/></linearGradient></defs><rect x=\"260\" y=\"110\" width=\"280\" height=\"280\" rx=\"15\" fill=\"url(%23t1)\" stroke=\"%23ca8a04\" stroke-width=\"4\"/><text x=\"400\" y=\"160\" fill=\"%23facc15\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"bold\" text-anchor=\"middle\">Brooke Bond</text><text x=\"400\" y=\"220\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"36\" font-weight=\"900\" text-anchor=\"middle\">TAJ MAHAL</text><path d=\"M360,280 C360,250 440,250 440,280\" stroke=\"%23facc15\" stroke-width=\"4\" fill=\"none\"/><text x=\"400\" y=\"330\" fill=\"%23facc15\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"bold\" text-anchor=\"middle\">TEA</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Taj Mahal Premium Tea - Wah Taj!</text></svg>"
+    "value": 145.0,
+    "manufacturer": "Fortune",
+    "model": "1L Bottle",
+    "tags": [
+      "oil",
+      "sunflower oil",
+      "cooking oil"
+    ],
+    "notes": "Fortune Sunlite Sunflower Oil by Fortune (1L Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>sunflower_oi</text></svg>"
   },
   {
-    "key": "haldirams",
-    "name": "Haldiram's Bhujia Sev",
+    "key": "coconut_oil",
+    "name": "Parachute 100% Pure Coconut Oil",
     "category": "Indian Groceries",
-    "value": 110.00,
-    "manufacturer": "Haldiram's",
+    "value": 199.0,
+    "manufacturer": "Marico",
+    "model": "500ml Bottle",
+    "tags": [
+      "oil",
+      "coconut oil",
+      "hair",
+      "cooking"
+    ],
+    "notes": "Parachute 100% Pure Coconut Oil by Marico (500ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>coconut_oil</text></svg>"
+  },
+  {
+    "key": "groundnut_oil",
+    "name": "Fortune Groundnut Oil Filtered",
+    "category": "Indian Groceries",
+    "value": 210.0,
+    "manufacturer": "Fortune",
+    "model": "1L Bottle",
+    "tags": [
+      "oil",
+      "groundnut oil",
+      "cooking oil"
+    ],
+    "notes": "Fortune Groundnut Oil Filtered by Fortune (1L Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>groundnut_oi</text></svg>"
+  },
+  {
+    "key": "olive_oil",
+    "name": "Borges Olive Oil Extra Light",
+    "category": "Indian Groceries",
+    "value": 850.0,
+    "manufacturer": "Borges",
+    "model": "1L Bottle",
+    "tags": [
+      "oil",
+      "olive oil",
+      "premium",
+      "cooking"
+    ],
+    "notes": "Borges Olive Oil Extra Light by Borges (1L Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>olive_oil</text></svg>"
+  },
+  {
+    "key": "vanaspati",
+    "name": "Dalda Vanaspati Ghee",
+    "category": "Indian Groceries",
+    "value": 160.0,
+    "manufacturer": "Dalda",
+    "model": "1L Pack",
+    "tags": [
+      "vanaspati",
+      "ghee",
+      "dalda",
+      "cooking"
+    ],
+    "notes": "Dalda Vanaspati Ghee by Dalda (1L Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>vanaspati</text></svg>"
+  },
+  {
+    "key": "gulab_jamun_mix",
+    "name": "MTR Gulab Jamun Instant Mix",
+    "category": "Indian Groceries",
+    "value": 125.0,
+    "manufacturer": "MTR",
+    "model": "175g Pack",
+    "tags": [
+      "sweets",
+      "gulab jamun",
+      "instant mix",
+      "dessert"
+    ],
+    "notes": "MTR Gulab Jamun Instant Mix by MTR (175g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>gulab_jamun_</text></svg>"
+  },
+  {
+    "key": "vermicelli",
+    "name": "MTR Vermicelli Roasted",
+    "category": "Indian Groceries",
+    "value": 50.0,
+    "manufacturer": "MTR",
     "model": "400g Pack",
-    "tags": ["snacks", "bhujia", "haldiram", "namkeen", "groceries"],
-    "notes": "Haldiram's Nagpur Bhujia Sev, crispy and mildly spiced chickpea flour noodles snack.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"h1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%23dc2626\"/><stop offset=\"100%\" stop-color=\"%23991b1b\"/></linearGradient></defs><rect x=\"260\" y=\"100\" width=\"280\" height=\"300\" rx=\"20\" fill=\"url(%23h1)\" stroke=\"%23eab308\" stroke-width=\"4\"/><ellipse cx=\"400\" cy=\"270\" rx=\"100\" ry=\"70\" fill=\"%23facc15\" stroke=\"%23ffffff\" stroke-width=\"2\"/><text x=\"400\" y=\"170\" fill=\"%23ffffff\" font-family=\"sans-serif\" font-size=\"30\" font-weight=\"900\" text-anchor=\"middle\">Haldiram's</text><text x=\"400\" y=\"265\" fill=\"%23dc2626\" font-family=\"sans-serif\" font-size=\"24\" font-weight=\"900\" text-anchor=\"middle\">BHUJIA</text><text x=\"400\" y=\"300\" fill=\"%23991b1b\" font-family=\"sans-serif\" font-size=\"20\" font-weight=\"bold\" text-anchor=\"middle\">SEV</text><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Haldiram's Nagpur Bhujia Sev</text></svg>"
+    "tags": [
+      "sewai",
+      "vermicelli",
+      "roasted",
+      "dessert"
+    ],
+    "notes": "MTR Vermicelli Roasted by MTR (400g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>vermicelli</text></svg>"
   },
   {
-    "key": "dettol",
-    "name": "Dettol Liquid Handwash",
+    "key": "custard_powder",
+    "name": "Weikfield Vanilla Custard Powder",
     "category": "Indian Groceries",
-    "value": 99.00,
+    "value": 45.0,
+    "manufacturer": "Weikfield",
+    "model": "100g Pack",
+    "tags": [
+      "custard",
+      "dessert",
+      "vanilla",
+      "baking"
+    ],
+    "notes": "Weikfield Vanilla Custard Powder by Weikfield (100g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>custard_powd</text></svg>"
+  },
+  {
+    "key": "baking_powder",
+    "name": "Weikfield Baking Powder",
+    "category": "Indian Groceries",
+    "value": 35.0,
+    "manufacturer": "Weikfield",
+    "model": "100g Box",
+    "tags": [
+      "baking",
+      "baking powder",
+      "cake",
+      "baking"
+    ],
+    "notes": "Weikfield Baking Powder by Weikfield (100g Box). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>baking_powde</text></svg>"
+  },
+  {
+    "key": "cocoa_powder",
+    "name": "Cadbury Cocoa Powder",
+    "category": "Indian Groceries",
+    "value": 160.0,
+    "manufacturer": "Mondelez",
+    "model": "150g Box",
+    "tags": [
+      "cocoa",
+      "chocolate",
+      "baking",
+      "beverage"
+    ],
+    "notes": "Cadbury Cocoa Powder by Mondelez (150g Box). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>cocoa_powder</text></svg>"
+  },
+  {
+    "key": "jelly_mix",
+    "name": "Weikfield Raspberry Jelly Crystals",
+    "category": "Indian Groceries",
+    "value": 50.0,
+    "manufacturer": "Weikfield",
+    "model": "90g Pack",
+    "tags": [
+      "jelly",
+      "dessert",
+      "raspberry",
+      "sweet"
+    ],
+    "notes": "Weikfield Raspberry Jelly Crystals by Weikfield (90g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>jelly_mix</text></svg>"
+  },
+  {
+    "key": "dettol_antiseptic",
+    "name": "Dettol Antiseptic Liquid",
+    "category": "Indian Groceries",
+    "value": 99.0,
     "manufacturer": "Reckitt",
-    "model": "200ml Refill",
-    "tags": ["hygiene", "handwash", "dettol", "soap", "groceries"],
-    "notes": "Dettol Liquid Handwash Original. Highly effective germ protection formula.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\" viewBox=\"0 0 800 500\"><rect width=\"800\" height=\"500\" fill=\"%230b0f19\"/><defs><linearGradient id=\"d1\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"%2316a34a\"/><stop offset=\"100%\" stop-color=\"%2314532d\"/></linearGradient></defs><path d=\"M340,150 L460,150 L430,380 L370,380 Z\" fill=\"url(%23d1)\" stroke=\"%2316a34a\" stroke-width=\"4\"/><rect x=\"380\" y=\"90\" width=\"40\" height=\"60\" fill=\"%23ffffff\"/><path d=\"M360,90 L440,90 L400,60 Z\" fill=\"%23dc2626\"/><rect x=\"360\" y=\"220\" width=\"80\" height=\"80\" fill=\"%23ffffff\" rx=\"5\"/><path d=\"M400,230 L400,290 M370,260 L430,260\" stroke=\"%23dc2626\" stroke-width=\"12\"/><text x=\"400\" y=\"460\" fill=\"%2394a3b8\" font-family=\"sans-serif\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\">Dettol Liquid Handwash Original</text></svg>"
+    "model": "250ml Bottle",
+    "tags": [
+      "hygiene",
+      "dettol",
+      "antiseptic",
+      "cleaning"
+    ],
+    "notes": "Dettol Antiseptic Liquid by Reckitt (250ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>dettol_antis</text></svg>"
+  },
+  {
+    "key": "lifebuoy_soap",
+    "name": "Lifebuoy Total 10 Soap",
+    "category": "Indian Groceries",
+    "value": 32.0,
+    "manufacturer": "HUL",
+    "model": "125g Bar",
+    "tags": [
+      "soap",
+      "lifebuoy",
+      "bath",
+      "hygiene"
+    ],
+    "notes": "Lifebuoy Total 10 Soap by HUL (125g Bar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>lifebuoy_soa</text></svg>"
+  },
+  {
+    "key": "dettol_soap",
+    "name": "Dettol Original Soap",
+    "category": "Indian Groceries",
+    "value": 38.0,
+    "manufacturer": "Reckitt",
+    "model": "125g Bar",
+    "tags": [
+      "soap",
+      "dettol",
+      "bath",
+      "hygiene"
+    ],
+    "notes": "Dettol Original Soap by Reckitt (125g Bar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>dettol_soap</text></svg>"
+  },
+  {
+    "key": "dove_soap",
+    "name": "Dove Cream Beauty Bar",
+    "category": "Indian Groceries",
+    "value": 68.0,
+    "manufacturer": "HUL",
+    "model": "125g Bar",
+    "tags": [
+      "soap",
+      "dove",
+      "bath",
+      "skincare"
+    ],
+    "notes": "Dove Cream Beauty Bar by HUL (125g Bar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>dove_soap</text></svg>"
+  },
+  {
+    "key": "pears_soap",
+    "name": "Pears Pure & Gentle Soap",
+    "category": "Indian Groceries",
+    "value": 55.0,
+    "manufacturer": "HUL",
+    "model": "125g Bar",
+    "tags": [
+      "soap",
+      "pears",
+      "bath",
+      "glycerine"
+    ],
+    "notes": "Pears Pure & Gentle Soap by HUL (125g Bar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>pears_soap</text></svg>"
+  },
+  {
+    "key": "vim_bar",
+    "name": "Vim Dishwash Bar",
+    "category": "Indian Groceries",
+    "value": 10.0,
+    "manufacturer": "HUL",
+    "model": "135g Bar",
+    "tags": [
+      "vim",
+      "dishwash",
+      "bar",
+      "cleaning"
+    ],
+    "notes": "Vim Dishwash Bar by HUL (135g Bar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>vim_bar</text></svg>"
+  },
+  {
+    "key": "vim_liquid",
+    "name": "Vim Gel Lemon Liquid",
+    "category": "Indian Groceries",
+    "value": 60.0,
+    "manufacturer": "HUL",
+    "model": "250ml Bottle",
+    "tags": [
+      "vim",
+      "dishwash",
+      "gel",
+      "cleaning"
+    ],
+    "notes": "Vim Gel Lemon Liquid by HUL (250ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>vim_liquid</text></svg>"
+  },
+  {
+    "key": "surf_excel",
+    "name": "Surf Excel Easy Wash Powder",
+    "category": "Indian Groceries",
+    "value": 140.0,
+    "manufacturer": "HUL",
+    "model": "1kg Pack",
+    "tags": [
+      "detergent",
+      "surf excel",
+      "laundry",
+      "cleaning"
+    ],
+    "notes": "Surf Excel Easy Wash Powder by HUL (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>surf_excel</text></svg>"
+  },
+  {
+    "key": "ariel",
+    "name": "Ariel Complete Detergent Powder",
+    "category": "Indian Groceries",
+    "value": 240.0,
+    "manufacturer": "P&G",
+    "model": "1kg Pack",
+    "tags": [
+      "detergent",
+      "ariel",
+      "laundry",
+      "cleaning"
+    ],
+    "notes": "Ariel Complete Detergent Powder by P&G (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>ariel</text></svg>"
+  },
+  {
+    "key": "tide",
+    "name": "Tide Jasmine & Rose Detergent",
+    "category": "Indian Groceries",
+    "value": 125.0,
+    "manufacturer": "P&G",
+    "model": "1kg Pack",
+    "tags": [
+      "detergent",
+      "tide",
+      "laundry",
+      "cleaning"
+    ],
+    "notes": "Tide Jasmine & Rose Detergent by P&G (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>tide</text></svg>"
+  },
+  {
+    "key": "harpic",
+    "name": "Harpic Power Plus Toilet Cleaner",
+    "category": "Indian Groceries",
+    "value": 93.0,
+    "manufacturer": "Reckitt",
+    "model": "500ml Bottle",
+    "tags": [
+      "harpic",
+      "toilet cleaner",
+      "cleaning",
+      "household"
+    ],
+    "notes": "Harpic Power Plus Toilet Cleaner by Reckitt (500ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>harpic</text></svg>"
+  },
+  {
+    "key": "lizol",
+    "name": "Lizol Disinfectant Floor Cleaner",
+    "category": "Indian Groceries",
+    "value": 115.0,
+    "manufacturer": "Reckitt",
+    "model": "500ml Bottle",
+    "tags": [
+      "lizol",
+      "floor cleaner",
+      "cleaning",
+      "household"
+    ],
+    "notes": "Lizol Disinfectant Floor Cleaner by Reckitt (500ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>lizol</text></svg>"
+  },
+  {
+    "key": "colgate_toothpaste",
+    "name": "Colgate Strong Teeth Toothpaste",
+    "category": "Indian Groceries",
+    "value": 65.0,
+    "manufacturer": "Colgate",
+    "model": "150g Tube",
+    "tags": [
+      "toothpaste",
+      "colgate",
+      "dental",
+      "oral care"
+    ],
+    "notes": "Colgate Strong Teeth Toothpaste by Colgate (150g Tube). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>colgate_toot</text></svg>"
+  },
+  {
+    "key": "close_up",
+    "name": "Closeup Everfresh Red Gel",
+    "category": "Indian Groceries",
+    "value": 75.0,
+    "manufacturer": "HUL",
+    "model": "150g Tube",
+    "tags": [
+      "toothpaste",
+      "closeup",
+      "gel",
+      "oral care"
+    ],
+    "notes": "Closeup Everfresh Red Gel by HUL (150g Tube). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>close_up</text></svg>"
+  },
+  {
+    "key": "sensodyne",
+    "name": "Sensodyne Fresh Mint Toothpaste",
+    "category": "Indian Groceries",
+    "value": 150.0,
+    "manufacturer": "GSK",
+    "model": "75g Tube",
+    "tags": [
+      "toothpaste",
+      "sensodyne",
+      "sensitive",
+      "oral care"
+    ],
+    "notes": "Sensodyne Fresh Mint Toothpaste by GSK (75g Tube). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>sensodyne</text></svg>"
+  },
+  {
+    "key": "parachute_coconut_oil",
+    "name": "Parachute Coconut Hair Oil",
+    "category": "Indian Groceries",
+    "value": 99.0,
+    "manufacturer": "Marico",
+    "model": "250ml Bottle",
+    "tags": [
+      "hair oil",
+      "parachute",
+      "coconut",
+      "grooming"
+    ],
+    "notes": "Parachute Coconut Hair Oil by Marico (250ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>parachute_co</text></svg>"
+  },
+  {
+    "key": "bajaj_almond_oil",
+    "name": "Bajaj Almond Drops Hair Oil",
+    "category": "Indian Groceries",
+    "value": 120.0,
+    "manufacturer": "Bajaj",
+    "model": "200ml Bottle",
+    "tags": [
+      "hair oil",
+      "almond",
+      "grooming"
+    ],
+    "notes": "Bajaj Almond Drops Hair Oil by Bajaj (200ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>bajaj_almond</text></svg>"
+  },
+  {
+    "key": "clinic_plus",
+    "name": "Clinic Plus Strong & Long Shampoo",
+    "category": "Indian Groceries",
+    "value": 125.0,
+    "manufacturer": "HUL",
+    "model": "340ml Bottle",
+    "tags": [
+      "shampoo",
+      "clinic plus",
+      "haircare",
+      "grooming"
+    ],
+    "notes": "Clinic Plus Strong & Long Shampoo by HUL (340ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>clinic_plus</text></svg>"
+  },
+  {
+    "key": "head_and_shoulders",
+    "name": "Head & Shoulders Anti Dandruff",
+    "category": "Indian Groceries",
+    "value": 250.0,
+    "manufacturer": "P&G",
+    "model": "340ml Bottle",
+    "tags": [
+      "shampoo",
+      "head and shoulders",
+      "haircare",
+      "grooming"
+    ],
+    "notes": "Head & Shoulders Anti Dandruff by P&G (340ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>head_and_sho</text></svg>"
+  },
+  {
+    "key": "pantene",
+    "name": "Pantene Hair Fall Control Shampoo",
+    "category": "Indian Groceries",
+    "value": 220.0,
+    "manufacturer": "P&G",
+    "model": "340ml Bottle",
+    "tags": [
+      "shampoo",
+      "pantene",
+      "haircare",
+      "grooming"
+    ],
+    "notes": "Pantene Hair Fall Control Shampoo by P&G (340ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>pantene</text></svg>"
+  },
+  {
+    "key": "boroplus",
+    "name": "Boroplus Antiseptic Cream",
+    "category": "Indian Groceries",
+    "value": 60.0,
+    "manufacturer": "Emami",
+    "model": "80ml Tube",
+    "tags": [
+      "skincare",
+      "boroplus",
+      "cream",
+      "antiseptic"
+    ],
+    "notes": "Boroplus Antiseptic Cream by Emami (80ml Tube). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>boroplus</text></svg>"
+  },
+  {
+    "key": "nivea_cream",
+    "name": "Nivea Soft Light Moisturiser",
+    "category": "Indian Groceries",
+    "value": 180.0,
+    "manufacturer": "Nivea",
+    "model": "200ml Tub",
+    "tags": [
+      "skincare",
+      "nivea",
+      "moisturiser",
+      "cream"
+    ],
+    "notes": "Nivea Soft Light Moisturiser by Nivea (200ml Tub). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>nivea_cream</text></svg>"
+  },
+  {
+    "key": "tomato_ketchup",
+    "name": "Kissan Fresh Tomato Ketchup",
+    "category": "Indian Groceries",
+    "value": 120.0,
+    "manufacturer": "Kissan",
+    "model": "950g Squeezo",
+    "tags": [
+      "ketchup",
+      "tomato",
+      "sauce",
+      "kissan"
+    ],
+    "notes": "Kissan Fresh Tomato Ketchup by Kissan (950g Squeezo). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>tomato_ketch</text></svg>"
+  },
+  {
+    "key": "chili_skin_sauce",
+    "name": "Ching's Secret Green Chilli Sauce",
+    "category": "Indian Groceries",
+    "value": 55.0,
+    "manufacturer": "Chings",
+    "model": "190g Bottle",
+    "tags": [
+      "chili sauce",
+      "sauce",
+      "chings",
+      "spicy"
+    ],
+    "notes": "Ching's Secret Green Chilli Sauce by Chings (190g Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>chili_skin_s</text></svg>"
+  },
+  {
+    "key": "soy_sauce",
+    "name": "Ching's Secret Dark Soy Sauce",
+    "category": "Indian Groceries",
+    "value": 60.0,
+    "manufacturer": "Chings",
+    "model": "200g Bottle",
+    "tags": [
+      "soy sauce",
+      "sauce",
+      "chings",
+      "cooking"
+    ],
+    "notes": "Ching's Secret Dark Soy Sauce by Chings (200g Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>soy_sauce</text></svg>"
+  },
+  {
+    "key": "vinegar",
+    "name": "Ching's Secret White Vinegar",
+    "category": "Indian Groceries",
+    "value": 45.0,
+    "manufacturer": "Chings",
+    "model": "200ml Bottle",
+    "tags": [
+      "vinegar",
+      "chings",
+      "cooking"
+    ],
+    "notes": "Ching's Secret White Vinegar by Chings (200ml Bottle). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>vinegar</text></svg>"
+  },
+  {
+    "key": "ginger_garlic_paste",
+    "name": "Smith & Jones Ginger Garlic Paste",
+    "category": "Indian Groceries",
+    "value": 40.0,
+    "manufacturer": "Capital Foods",
+    "model": "200g Pack",
+    "tags": [
+      "paste",
+      "ginger garlic",
+      "cooking",
+      "convenience"
+    ],
+    "notes": "Smith & Jones Ginger Garlic Paste by Capital Foods (200g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>ginger_garli</text></svg>"
+  },
+  {
+    "key": "mixed_pickle",
+    "name": "Mother's Recipe Mixed Pickle",
+    "category": "Indian Groceries",
+    "value": 75.0,
+    "manufacturer": "Mothers Recipe",
+    "model": "400g Jar",
+    "tags": [
+      "pickle",
+      "mixed pickle",
+      "tangy",
+      "traditional"
+    ],
+    "notes": "Mother's Recipe Mixed Pickle by Mothers Recipe (400g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>mixed_pickle</text></svg>"
+  },
+  {
+    "key": "mango_pickle",
+    "name": "Mother's Recipe Mango Pickle",
+    "category": "Indian Groceries",
+    "value": 75.0,
+    "manufacturer": "Mothers Recipe",
+    "model": "400g Jar",
+    "tags": [
+      "pickle",
+      "mango pickle",
+      "tangy",
+      "traditional"
+    ],
+    "notes": "Mother's Recipe Mango Pickle by Mothers Recipe (400g Jar). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>mango_pickle</text></svg>"
+  },
+  {
+    "key": "tata_salt",
+    "name": "Tata Salt Vacuum Iodized",
+    "category": "Indian Groceries",
+    "value": 28.0,
+    "manufacturer": "Tata",
+    "model": "1kg Pack",
+    "tags": [
+      "salt",
+      "groceries",
+      "tata",
+      "iodized"
+    ],
+    "notes": "Tata Salt Vacuum Iodized by Tata (1kg Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>tata_salt</text></svg>"
+  },
+  {
+    "key": "maggi",
+    "name": "Maggi 2-Minute Noodles",
+    "category": "Indian Groceries",
+    "value": 14.0,
+    "manufacturer": "Nestle",
+    "model": "70g Pack",
+    "tags": [
+      "noodles",
+      "maggi",
+      "instant"
+    ],
+    "notes": "Maggi 2-Minute Noodles by Nestle (70g Pack). Ideal for Indian households.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>maggi</text></svg>"
   }
 ]

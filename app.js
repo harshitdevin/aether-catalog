@@ -2982,7 +2982,7 @@ function setupTabs() {
 }
 
 let lastInferenceTime = 0;
-const INFERENCE_INTERVAL = 1000; // Run inference every 1000ms to keep performance smooth and not overload backend
+const INFERENCE_INTERVAL = 1500; // Run inference every 1500ms to keep performance smooth and not overload backend
 
 async function webcamInferenceLoop(timestamp) {
   if (!isScanning || !tfjsModel) return;
@@ -3366,7 +3366,8 @@ async function startWebcam() {
       video: {
         facingMode: 'environment',
         width: { ideal: 640 },
-        height: { ideal: 480 }
+        height: { ideal: 480 },
+        frameRate: { ideal: 10, max: 15 }
       },
       audio: false
     };
