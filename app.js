@@ -3093,7 +3093,7 @@ async function webcamInferenceLoop(timestamp) {
       const predictedClass = clientMatches[0].name;
       const maxProb = clientMatches[0].prob;
       
-      if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.45) {
+      if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.30) {
         const now = Date.now();
         // Only auto-capture if cooldown has passed or if it's a different item class
         if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
@@ -3114,7 +3114,7 @@ async function webcamInferenceLoop(timestamp) {
           // Trigger successful scan
           await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
         }
-      } else if (maxProb < 0.35) {
+      } else if (maxProb < 0.20) {
         // Clear active class when item is removed from camera view
         activeClass = null;
       }
@@ -3152,7 +3152,7 @@ async function webcamInferenceLoop(timestamp) {
             }
           }
 
-          if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.45) {
+          if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.30) {
             const now = Date.now();
             if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
               const cropResult = autoCropObject(video);
@@ -3168,7 +3168,7 @@ async function webcamInferenceLoop(timestamp) {
               
               await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
             }
-          } else if (maxProb < 0.35) {
+          } else if (maxProb < 0.20) {
             activeClass = null;
           }
         } catch (err) {
@@ -3554,7 +3554,7 @@ async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
   const modelStatus = DOM.webcamStatus;
 
   // Handle low-confidence / out-of-distribution (untrained) products
-  if (classKey === 'unknown' || confidence < 0.45) {
+  if (classKey === 'unknown' || confidence < 0.30) {
     playBeep('warning'); // Warning beep
     
     const newItem = {
