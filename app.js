@@ -2622,41 +2622,28 @@ async function initTFModel() {
   if (!modelStatus) return;
   
   try {
-    modelStatus.textContent = 'Loading TensorFlow.js...';
+    modelStatus.textContent = 'Initializing AI Scanner...';
     
-    // Check if tf is available globally
-    if (typeof tf === 'undefined') {
-      throw new Error('TensorFlow.js CDN did not load correctly.');
-    }
-    
-    // Configure WebGL backend for GPU hardware acceleration
-    modelStatus.textContent = 'Configuring WebGL Accelerator...';
-    try {
-      await tf.setBackend('webgl');
-      console.log('TensorFlow.js WebGL backend initialized successfully.');
-    } catch (e) {
-      console.warn('WebGL backend not supported. Falling back to CPU backend.', e);
-      await tf.setBackend('cpu');
-    }
-    
-    modelStatus.textContent = 'Loading AI Classifier Model...';
-    
-    // Load model from local endpoint
-    tfjsModel = await tf.loadLayersModel('/web_model/model.json');
-    
-    // Fetch labels
-    const res = await fetch('/web_model/labels.json');
+    // Instead of loading heavy client-side model, we use the server-side API.
+    // Fetch labels from the templates list
+    const res = await fetch('/api/templates');
     if (res.ok) {
-      tfjsLabels = await res.json();
+      const templates = await res.json();
+      tfjsLabels = templates.map(t => t.key);
+      if (tfjsLabels.length === 0) {
+        tfjsLabels = ["amul_butter", "atta", "dettol", "haldirams", "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"];
+      }
     } else {
-      // Fallback classes alphabetical
       tfjsLabels = ["amul_butter", "atta", "dettol", "haldirams", "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"];
     }
     
-    modelStatus.textContent = 'AI Grocery Model Loaded';
+    // Set a dummy object for tfjsModel so check checks like "if (!tfjsModel)" pass.
+    tfjsModel = { dummy: true };
+    
+    modelStatus.textContent = 'AI Grocery Scanner Ready';
     modelStatus.classList.add('active');
   } catch (err) {
-    console.error('Failed to load TFJS Model:', err);
+    console.error('Failed to initialize AI templates:', err);
     modelStatus.textContent = 'Offline (Dev Fallback Active)';
     modelStatus.classList.remove('active');
   }
@@ -2845,8 +2832,8 @@ function setupTabs() {
       const frameDataUri = cropResult.frameDataUri;
       const colorfulness = cropResult.colorfulness;
       
-      // If the image is dull/neutral (colorfulness < 22), treat it immediately as unknown
-      if (colorfulness < 22) {
+      // If the image is dull/neutral (colorfulness < 22), treat it immediately as unknown (bypassed in favor of backend AI model)
+      if (colorfulness < -1) {
         await handleSuccessfulScan('unknown', 0.0, frameDataUri);
         return;
       }
@@ -2858,52 +2845,47 @@ function setupTabs() {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, 224, 224);
       
-      let predictedClass = tfjsLabels[0] || 'tata_salt';
-      let maxProb = 1.0;
-      
-      try {
-        // Run classification ONCE on the captured canvas (prevents WebGL green-screen conflict)
-        if (tfjsModel && typeof tf !== 'undefined') {
-          const predictions = tf.tidy(() => {
-            const tensor = tf.browser.fromPixels(canvas)
-                              .resizeNearestNeighbor([224, 224])
-                              .toFloat()
-                              .expandDims();
-            return tfjsModel.predict(tensor);
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          if (modelStatus) modelStatus.textContent = 'Capture failed.';
+          return;
+        }
+        
+        let predictedClass = 'unknown';
+        let maxProb = 0.0;
+        
+        try {
+          const res = await fetch('/api/ai/detect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/jpeg' },
+            body: blob
           });
           
-          const probabilities = await predictions.data();
-          predictions.dispose();
-          
-          let maxIdx = 0;
-          maxProb = 0;
-          for (let i = 0; i < probabilities.length; i++) {
-            if (probabilities[i] > maxProb) {
-              maxProb = probabilities[i];
-              maxIdx = i;
+          if (res.ok) {
+            const data = await res.json();
+            const detections = data.detections || [];
+            if (detections.length > 0) {
+              let bestDet = detections[0];
+              for (let det of detections) {
+                if (det.confidence > bestDet.confidence) {
+                  bestDet = det;
+                }
+              }
+              predictedClass = bestDet.class;
+              maxProb = bestDet.confidence;
             }
           }
-          predictedClass = tfjsLabels[maxIdx] || 'tata_salt';
+          
+          // Trigger successful scan handler to push item to cart (leaves camera running)
+          await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+          
+        } catch (err) {
+          console.error('Capture classification failed:', err);
+          if (modelStatus) {
+            modelStatus.textContent = 'Inference failed. Please try again.';
+          }
         }
-        
-        // Verify color profile matches target class
-        if (!checkColorMatch(predictedClass, cropResult.rawPixels)) {
-          console.warn(`Color profile mismatch for predicted class '${predictedClass}'. Rejecting to 'unknown'.`);
-          predictedClass = 'unknown';
-          maxProb = 0.0;
-        }
-        
-        // Trigger successful scan handler to push item to cart (leaves camera running)
-        await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
-        
-      } catch (err) {
-        console.error('Capture classification failed:', err);
-        if (modelStatus) {
-          modelStatus.textContent = 'Inference failed. Added Tata Salt.';
-        }
-        // Fallback fill with captured frame data
-        await handleSuccessfulScan('tata_salt', 1.0, frameDataUri);
-      }
+      }, 'image/jpeg', 0.80);
     });
   }
   
@@ -3000,7 +2982,7 @@ function setupTabs() {
 }
 
 let lastInferenceTime = 0;
-const INFERENCE_INTERVAL = 300; // Run inference every 300ms (3.3 FPS) to keep performance buttery smooth
+const INFERENCE_INTERVAL = 1000; // Run inference every 1000ms to keep performance smooth and not overload backend
 
 async function webcamInferenceLoop(timestamp) {
   if (!isScanning || !tfjsModel) return;
@@ -3026,72 +3008,84 @@ async function webcamInferenceLoop(timestamp) {
   isInferenceRunning = true;
 
   try {
-    let predictedClass = null;
-    let maxProb = 0;
-
-    // Run TF.js inference directly on the video element for speed (read-only texture upload is fast)
-    if (tfjsModel && typeof tf !== 'undefined') {
-      const predictions = tf.tidy(() => {
-        const tensor = tf.browser.fromPixels(video)
-                          .resizeNearestNeighbor([224, 224])
-                          .toFloat()
-                          .expandDims();
-        return tfjsModel.predict(tensor);
-      });
-
-      const probabilities = await predictions.data();
-      predictions.dispose();
-
-      let maxIdx = 0;
-      for (let i = 0; i < probabilities.length; i++) {
-        if (probabilities[i] > maxProb) {
-          maxProb = probabilities[i];
-          maxIdx = i;
-        }
+    // Yield to browser to ensure video frame is painted
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    
+    // Draw video onto offscreen canvas (avoids WebGL green-screen conflict with live video texture)
+    const canvas = document.createElement('canvas');
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 224, 224);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        isInferenceRunning = false;
+        return;
       }
-      predictedClass = tfjsLabels[maxIdx];
-    }
-
-    if (predictedClass && predictedClass !== 'unknown' && maxProb > 0.85) {
-      const now = Date.now();
-      // Only auto-capture if cooldown has passed or if it's a different item class
-      if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
-        // Capture snapshot and automatically crop the object boundaries
-        const cropResult = autoCropObject(video);
+      
+      try {
+        let predictedClass = 'unknown';
+        let maxProb = 0.0;
         
-        // Reject auto-scanning of dull background noise or hands
-        if (cropResult.colorfulness < 22) {
-          activeClass = null; // Reset
-          isInferenceRunning = false;
-          requestAnimationFrame(webcamInferenceLoop);
-          return;
+        const res = await fetch('/api/ai/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const detections = data.detections || [];
+          if (detections.length > 0) {
+            let bestDet = detections[0];
+            for (let det of detections) {
+              if (det.confidence > bestDet.confidence) {
+                bestDet = det;
+              }
+            }
+            predictedClass = bestDet.class;
+            maxProb = bestDet.confidence;
+          }
         }
 
-        // Verify color profile matches target class (ignore auto-capture if color mismatch)
-        if (!checkColorMatch(predictedClass, cropResult.rawPixels)) {
-          console.log(`Auto-scan ignored: Color profile mismatch for predicted class '${predictedClass}'.`);
-          activeClass = null; // Reset
-          isInferenceRunning = false;
-          requestAnimationFrame(webcamInferenceLoop);
-          return;
-        }
+        if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.80) {
+          const now = Date.now();
+          // Only auto-capture if cooldown has passed or if it's a different item class
+          if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
+            // Capture snapshot and automatically crop the object boundaries
+            const cropResult = autoCropObject(video);
+            
+            // Reject auto-scanning of dull background noise or hands (bypassed in favor of backend AI model)
+            if (cropResult.colorfulness < -1) {
+              activeClass = null; // Reset
+              isInferenceRunning = false;
+              return;
+            }
 
-        lastScanTime = now;
-        activeClass = predictedClass;
-        
-        // Trigger successful scan
-        await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+            lastScanTime = now;
+            activeClass = predictedClass;
+            
+            // Trigger successful scan
+            await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+          }
+        } else if (maxProb < 0.70) {
+          // Clear active class when item is removed from camera view
+          activeClass = null;
+        }
+      } catch (err) {
+        console.error('Auto-inference error:', err);
+      } finally {
+        isInferenceRunning = false;
       }
-    } else if (maxProb < 0.70) {
-      // Clear active class when item is removed from camera view
-      activeClass = null;
-    }
+    }, 'image/jpeg', 0.80);
+    
   } catch (err) {
-    console.error('Auto-inference error:', err);
-  } finally {
+    console.error('Canvas setup error:', err);
     isInferenceRunning = false;
-    requestAnimationFrame(webcamInferenceLoop);
   }
+  
+  requestAnimationFrame(webcamInferenceLoop);
 }
 
 // Verify color profile matches the predicted class
@@ -3372,8 +3366,7 @@ async function startWebcam() {
       video: {
         facingMode: 'environment',
         width: { ideal: 640 },
-        height: { ideal: 480 },
-        frameRate: { ideal: 60, min: 30 }
+        height: { ideal: 480 }
       },
       audio: false
     };

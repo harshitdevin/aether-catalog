@@ -577,11 +577,11 @@ def classify_crop(img_bgr):
         if feature_model is None:
             return 'unknown', 0.0
             
-        # 0. Reject dull background noise using the colorfulness metric
-        colorfulness = get_image_colorfulness(img_bgr)
-        if colorfulness < 15.0:
-            print(f"Crop rejected due to low colorfulness ({colorfulness:.2f} < 15.0)")
-            return 'unknown', 0.0
+        # 0. Reject dull background noise using the colorfulness metric (bypassed in favor of centroid gating + unknown class)
+        # colorfulness = get_image_colorfulness(img_bgr)
+        # if colorfulness < 15.0:
+        #     print(f"Crop rejected due to low colorfulness ({colorfulness:.2f} < 15.0)")
+        #     return 'unknown', 0.0
             
         # Convert BGR to RGB (MobileNetV2 expects RGB inputs)
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
