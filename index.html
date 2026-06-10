@@ -576,9 +576,16 @@
                 </div>
                 
                 <div class="webcam-controls-row">
-                  <div style="display: flex; gap: 10px; align-items: center;">
+                  <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-primary" id="btn-toggle-webcam">Start Camera Scan</button>
                     <button type="button" class="btn btn-success hidden" id="btn-capture-webcam">Capture Frame</button>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-left: 10px;">
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="webcam-auto-scan-toggle" checked>
+                        <span class="slider"></span>
+                      </label>
+                      <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Auto-Scan Items</span>
+                    </div>
                   </div>
                   <span class="webcam-status-label" id="webcam-model-status">Loading TensorFlow.js...</span>
                 </div>
@@ -1389,6 +1396,7 @@
   <!-- TensorFlow.js CDN for client-side grocery model inference -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.17.0/dist/tf-converter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

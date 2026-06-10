@@ -2576,6 +2576,8 @@ function selectSuggestion(item) {
 let webcamStream = null;
 let tfjsModel = null;
 let tfjsLabels = [];
+let weightsTensor = null;
+let biasesTensor = null;
 let isScanning = false;
 let isInferenceRunning = false;
 let lastScanTime = 0;
@@ -2624,28 +2626,71 @@ async function initTFModel() {
   try {
     modelStatus.textContent = 'Initializing AI Scanner...';
     
-    // Instead of loading heavy client-side model, we use the server-side API.
-    // Fetch labels from the templates list
-    const res = await fetch('/api/templates');
-    if (res.ok) {
-      const templates = await res.json();
-      tfjsLabels = templates.map(t => t.key);
-      if (tfjsLabels.length === 0) {
-        tfjsLabels = ["amul_butter", "atta", "dettol", "haldirams", "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"];
-      }
-    } else {
-      tfjsLabels = ["amul_butter", "atta", "dettol", "haldirams", "maggi", "mustard_oil", "taj_mahal", "tata_salt", "unknown"];
+    try {
+      await tf.setBackend('webgl');
+    } catch (e) {
+      console.warn('WebGL backend failed, using default:', e);
     }
     
-    // Set a dummy object for tfjsModel so check checks like "if (!tfjsModel)" pass.
-    tfjsModel = { dummy: true };
+    // Fetch the classifier configuration containing classes, weights, and biases
+    const res = await fetch('/web_model/classifier.json');
+    if (!res.ok) throw new Error('Failed to load classifier.json from server');
+    
+    const data = await res.json();
+    tfjsLabels = data.classes || [];
+    
+    if (weightsTensor) weightsTensor.dispose();
+    if (biasesTensor) biasesTensor.dispose();
+    
+    weightsTensor = tf.tensor2d(data.weights);
+    biasesTensor = tf.tensor1d(data.biases);
+    
+    // Load MobileNetV2 from CDN
+    tfjsModel = await mobilenet.load({version: 2, alpha: 1.0});
     
     modelStatus.textContent = 'AI Grocery Scanner Ready';
     modelStatus.classList.add('active');
   } catch (err) {
-    console.error('Failed to initialize AI templates:', err);
-    modelStatus.textContent = 'Offline (Dev Fallback Active)';
-    modelStatus.classList.remove('active');
+    console.error('Failed to initialize local AI model, using API fallback:', err);
+    modelStatus.textContent = 'AI Grocery Scanner Ready (Server Fallback)';
+    modelStatus.classList.add('active');
+    
+    // Set a dummy object so we can fall back to backend API if tfjs initialization fails
+    tfjsModel = { dummy: true };
+  }
+}
+
+// Perform client-side similarity/dense classification
+async function predictClientSide(canvas) {
+  if (!tfjsModel || tfjsModel.dummy || !weightsTensor || !biasesTensor) {
+    return null;
+  }
+  
+  try {
+    const probsTensor = tf.tidy(() => {
+      const embeddingTensor = tfjsModel.infer(canvas, true);
+      const epsilon = tf.scalar(1e-8);
+      const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
+      const norm = tf.sqrt(sumSq);
+      const normalized = tf.div(embeddingTensor, tf.add(norm, epsilon));
+      
+      const product = tf.matMul(normalized, weightsTensor);
+      const biased = tf.add(product, biasesTensor);
+      return tf.softmax(biased);
+    });
+    
+    const probabilities = await probsTensor.data();
+    probsTensor.dispose();
+    
+    const matches = [];
+    for (let i = 0; i < probabilities.length; i++) {
+      matches.push({ name: tfjsLabels[i], prob: probabilities[i] });
+    }
+    matches.sort((a, b) => b.prob - a.prob);
+    return matches;
+  } catch (err) {
+    console.error('Error during client-side prediction:', err);
+    return null;
   }
 }
 
@@ -2832,60 +2877,72 @@ function setupTabs() {
       const frameDataUri = cropResult.frameDataUri;
       const colorfulness = cropResult.colorfulness;
       
-      // If the image is dull/neutral (colorfulness < 22), treat it immediately as unknown (bypassed in favor of backend AI model)
+      // If the image is dull/neutral, treat it immediately as unknown
       if (colorfulness < -1) {
         await handleSuccessfulScan('unknown', 0.0, frameDataUri);
         return;
       }
       
-      // Create a temporary canvas for model classification (static pixel grab avoids WebGL green-screen conflict)
+      // Create a temporary canvas for model classification
       const canvas = document.createElement('canvas');
       canvas.width = 224;
       canvas.height = 224;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, 224, 224);
       
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          if (modelStatus) modelStatus.textContent = 'Capture failed.';
-          return;
-        }
-        
-        let predictedClass = 'unknown';
-        let maxProb = 0.0;
-        
-        try {
-          const res = await fetch('/api/ai/detect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'image/jpeg' },
-            body: blob
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            const detections = data.detections || [];
-            if (detections.length > 0) {
-              let bestDet = detections[0];
-              for (let det of detections) {
-                if (det.confidence > bestDet.confidence) {
-                  bestDet = det;
+      try {
+        const clientMatches = await predictClientSide(canvas);
+        if (clientMatches && clientMatches.length > 0) {
+          const predictedClass = clientMatches[0].name;
+          const maxProb = clientMatches[0].prob;
+          await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+        } else {
+          // Fallback to API endpoint
+          canvas.toBlob(async (blob) => {
+            if (!blob) {
+              if (modelStatus) modelStatus.textContent = 'Capture failed.';
+              return;
+            }
+            
+            try {
+              const res = await fetch('/api/ai/detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'image/jpeg' },
+                body: blob
+              });
+              
+              let predictedClass = 'unknown';
+              let maxProb = 0.0;
+              
+              if (res.ok) {
+                const data = await res.json();
+                const detections = data.detections || [];
+                if (detections.length > 0) {
+                  let bestDet = detections[0];
+                  for (let det of detections) {
+                    if (det.confidence > bestDet.confidence) {
+                      bestDet = det;
+                    }
+                  }
+                  predictedClass = bestDet.class;
+                  maxProb = bestDet.confidence;
                 }
               }
-              predictedClass = bestDet.class;
-              maxProb = bestDet.confidence;
+              await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+            } catch (err) {
+              console.error('Capture classification failed:', err);
+              if (modelStatus) {
+                modelStatus.textContent = 'Inference failed. Please try again.';
+              }
             }
-          }
-          
-          // Trigger successful scan handler to push item to cart (leaves camera running)
-          await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
-          
-        } catch (err) {
-          console.error('Capture classification failed:', err);
-          if (modelStatus) {
-            modelStatus.textContent = 'Inference failed. Please try again.';
-          }
+          }, 'image/jpeg', 0.80);
         }
-      }, 'image/jpeg', 0.80);
+      } catch (err) {
+        console.error('Client side manual prediction failed:', err);
+        if (modelStatus) {
+          modelStatus.textContent = 'Inference failed. Please try again.';
+        }
+      }
     });
   }
   
@@ -2982,10 +3039,15 @@ function setupTabs() {
 }
 
 let lastInferenceTime = 0;
-const INFERENCE_INTERVAL = 1500; // Run inference every 1500ms to keep performance smooth and not overload backend
+const INFERENCE_INTERVAL = 800; // Run inference every 800ms to keep performance smooth and not overload backend
 
 async function webcamInferenceLoop(timestamp) {
-  if (!isScanning || !tfjsModel) return;
+  if (!isScanning) return;
+  
+  if (!tfjsModel) {
+    requestAnimationFrame(webcamInferenceLoop);
+    return;
+  }
 
   const video = DOM.webcamFeed;
   if (!video || video.paused || video.ended) {
@@ -3005,6 +3067,13 @@ async function webcamInferenceLoop(timestamp) {
     return;
   }
 
+  // Check if Auto-Scan toggle is active
+  const autoScanToggle = document.getElementById('webcam-auto-scan-toggle');
+  if (autoScanToggle && !autoScanToggle.checked) {
+    requestAnimationFrame(webcamInferenceLoop);
+    return;
+  }
+
   isInferenceRunning = true;
 
   try {
@@ -3018,68 +3087,97 @@ async function webcamInferenceLoop(timestamp) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, 224, 224);
     
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        isInferenceRunning = false;
-        return;
-      }
-      
-      try {
-        let predictedClass = 'unknown';
-        let maxProb = 0.0;
-        
-        const res = await fetch('/api/ai/detect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'image/jpeg' },
-          body: blob
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          const detections = data.detections || [];
-          if (detections.length > 0) {
-            let bestDet = detections[0];
-            for (let det of detections) {
-              if (det.confidence > bestDet.confidence) {
-                bestDet = det;
-              }
-            }
-            predictedClass = bestDet.class;
-            maxProb = bestDet.confidence;
-          }
-        }
-
-        if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.80) {
-          const now = Date.now();
-          // Only auto-capture if cooldown has passed or if it's a different item class
-          if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
-            // Capture snapshot and automatically crop the object boundaries
-            const cropResult = autoCropObject(video);
-            
-            // Reject auto-scanning of dull background noise or hands (bypassed in favor of backend AI model)
-            if (cropResult.colorfulness < -1) {
-              activeClass = null; // Reset
-              isInferenceRunning = false;
-              return;
-            }
-
-            lastScanTime = now;
-            activeClass = predictedClass;
-            
-            // Trigger successful scan
-            await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
-          }
-        } else if (maxProb < 0.70) {
-          // Clear active class when item is removed from camera view
-          activeClass = null;
-        }
-      } catch (err) {
-        console.error('Auto-inference error:', err);
-      } finally {
-        isInferenceRunning = false;
-      }
-    }, 'image/jpeg', 0.80);
+    const clientMatches = await predictClientSide(canvas);
     
+    if (clientMatches && clientMatches.length > 0) {
+      const predictedClass = clientMatches[0].name;
+      const maxProb = clientMatches[0].prob;
+      
+      if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.50) {
+        const now = Date.now();
+        // Only auto-capture if cooldown has passed or if it's a different item class
+        if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
+          // Capture snapshot and automatically crop the object boundaries
+          const cropResult = autoCropObject(video);
+          
+          // Reject auto-scanning of dull background noise or hands
+          if (cropResult.colorfulness < -1) {
+            activeClass = null; // Reset
+            isInferenceRunning = false;
+            requestAnimationFrame(webcamInferenceLoop);
+            return;
+          }
+
+          lastScanTime = now;
+          activeClass = predictedClass;
+          
+          // Trigger successful scan
+          await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+        }
+      } else if (maxProb < 0.40) {
+        // Clear active class when item is removed from camera view
+        activeClass = null;
+      }
+      isInferenceRunning = false;
+    } else {
+      // Fallback to API endpoint if local model not loaded
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          isInferenceRunning = false;
+          return;
+        }
+        
+        try {
+          let predictedClass = 'unknown';
+          let maxProb = 0.0;
+          
+          const res = await fetch('/api/ai/detect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/jpeg' },
+            body: blob
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            const detections = data.detections || [];
+            if (detections.length > 0) {
+              let bestDet = detections[0];
+              for (let det of detections) {
+                if (det.confidence > bestDet.confidence) {
+                  bestDet = det;
+                }
+              }
+              predictedClass = bestDet.class;
+              maxProb = bestDet.confidence;
+            }
+          }
+
+          if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.50) {
+            const now = Date.now();
+            if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
+              const cropResult = autoCropObject(video);
+              
+              if (cropResult.colorfulness < -1) {
+                activeClass = null;
+                isInferenceRunning = false;
+                return;
+              }
+
+              lastScanTime = now;
+              activeClass = predictedClass;
+              
+              await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+            }
+          } else if (maxProb < 0.40) {
+            activeClass = null;
+          }
+        } catch (err) {
+          console.error('Auto-inference API fallback error:', err);
+        } finally {
+          isInferenceRunning = false;
+        }
+      }, 'image/jpeg', 0.80);
+    }
   } catch (err) {
     console.error('Canvas setup error:', err);
     isInferenceRunning = false;
@@ -3364,15 +3462,19 @@ async function startWebcam() {
     
     const constraints = {
       video: {
-        facingMode: 'environment',
-        width: { ideal: 640 },
-        height: { ideal: 480 },
-        frameRate: { ideal: 10, max: 15 }
+        width: 640,
+        height: 480
       },
       audio: false
     };
     
-    webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+    try {
+      webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (e1) {
+      console.warn('Standard webcam constraints failed, trying basic fallback:', e1);
+      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+    
     video.srcObject = webcamStream;
     
     // When video starts playing
@@ -3452,7 +3554,7 @@ async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
   const modelStatus = DOM.webcamStatus;
 
   // Handle low-confidence / out-of-distribution (untrained) products
-  if (classKey === 'unknown' || confidence < 0.80) {
+  if (classKey === 'unknown' || confidence < 0.50) {
     playBeep('warning'); // Warning beep
     
     const newItem = {

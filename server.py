@@ -242,6 +242,10 @@ seed_data()
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/test_model.html')
+def test_model_page():
+    return send_from_directory('.', 'test_model.html')
+
 # Get product templates (filtered by name/tags/category or all)
 @app.route('/api/templates', methods=['GET'])
 def get_templates():
@@ -482,6 +486,7 @@ import time
 # Initialize YOLOv8 and Prototypical Few-Shot MobileNetV2
 yolo_model = None
 feature_model = None
+model_lock = threading.Lock()
 centroids = {}
 classes_list = []
 classifier_weights = None
@@ -596,7 +601,8 @@ def classify_crop(img_bgr):
         x = (x / 127.5) - 1.0  # Normalized to [-1, 1] for MobileNetV2
         
         # Extract features (use direct call for 10x faster single-image inference than predict())
-        features = feature_model(x, training=False).numpy()[0]
+        with model_lock:
+            features = feature_model(x, training=False).numpy()[0]
         norm = np.linalg.norm(features)
         if norm > 0:
             features_norm = features / norm
@@ -910,7 +916,8 @@ def run_retrain_thread():
                         x_arr = np.expand_dims(x_arr, axis=0)
                         x_arr = (x_arr / 127.5) - 1.0
                         
-                        feat = feature_model(x_arr, training=False).numpy()[0]
+                        with model_lock:
+                            feat = feature_model(x_arr, training=False).numpy()[0]
                         batch_features.append(feat)
                     except Exception as img_err:
                         print(f"Failed to process image {p}: {img_err}")

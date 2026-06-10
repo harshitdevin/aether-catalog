@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Model Diagnostic Test</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 20px; }
+    button { padding: 10px 20px; margin: 5px; background: #06b6d4; color: #000; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    video { width: 320px; height: 240px; border: 2px solid #06b6d4; border-radius: 8px; display: block; margin: 10px 0; }
+    #log { background: #1e293b; padding: 15px; border-radius: 8px; white-space: pre-wrap; min-height: 200px; max-height: 400px; overflow-y: auto; font-size: 13px; margin-top: 10px; }
+    .ok { color: #4ade80; } .err { color: #f87171; } .info { color: #60a5fa; } .warn { color: #fbbf24; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+</head>
+<body>
+  <h2>🔬 TF.js Model Diagnostic</h2>
+  <button onclick="runDiagnostic()">▶ Run Full Diagnostic</button>
+  <button onclick="startCamera()">📷 Start Camera</button>
+  <button onclick="captureAndPredict()">🎯 Capture & Predict</button>
+  <button id="btn-auto" onclick="toggleAutoCapture()">🔄 Start Auto-Predict</button>
+  <video id="vid" autoplay playsinline muted></video>
+  <div id="log">Click "Run Full Diagnostic" to start...\n</div>
+
+  <script>
+    let model = null;
+    let labels = [];
+    let weightsTensor = null;
+    let biasesTensor = null;
+    let stream = null;
+
+    function log(msg, cls='') {
+      const el = document.getElementById('log');
+      el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function runDiagnostic() {
+      document.getElementById('log').innerHTML = '';
+      log('=== TF.js MobileNet + Classifier Diagnostic ===', 'info');
+      
+      // 1. Check TF.js
+      log(`\n[1] TF.js version: ${tf.version.tfjs}`, 'ok');
+      log(`    Backend: ${tf.getBackend()}`);
+      
+      try {
+        await tf.setBackend('webgl');
+        log(`    Backend set to: ${tf.getBackend()}`, 'ok');
+      } catch(e) {
+        log(`    WebGL failed, using: ${tf.getBackend()}`, 'warn');
+      }
+
+      // 2. Fetch classifier.json
+      log('\n[2] Fetching classifier.json...', 'info');
+      try {
+        const res = await fetch('/web_model/classifier.json');
+        const data = await res.json();
+        labels = data.classes;
+        
+        if (weightsTensor) weightsTensor.dispose();
+        if (biasesTensor) biasesTensor.dispose();
+        
+        weightsTensor = tf.tensor2d(data.weights);
+        biasesTensor = tf.tensor1d(data.biases);
+        
+        log(`    Classifier loaded: ${labels.length} classes`, 'ok');
+        log(`    First 5 classes: ${labels.slice(0,5).join(', ')}`);
+      } catch(e) {
+        log(`    ERROR: ${e.message}`, 'err');
+        return;
+      }
+
+      // 3. Load MobileNet
+      log('\n[3] Loading MobileNetV2 from CDN...', 'info');
+      try {
+        const t0 = Date.now();
+        model = await mobilenet.load({version: 2, alpha: 1.0});
+        log(`    MobileNetV2 loaded in ${Date.now()-t0}ms`, 'ok');
+      } catch(e) {
+        log(`    ERROR loading model: ${e.message}`, 'err');
+        return;
+      }
+
+      // 4. Test similarity matching with dummy input
+      log('\n[4] Running inference on dummy (random) input...', 'info');
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 224; canvas.height = 224;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(0, 0, 224, 224); // Red square
+        
+        const probsTensor = tf.tidy(() => {
+          const embeddingTensor = model.infer(canvas, true);
+          const epsilon = tf.scalar(1e-8);
+          const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
+          const norm = tf.sqrt(sumSq);
+          const normalized = tf.div(embeddingTensor, tf.add(norm, epsilon));
+          
+          const product = tf.matMul(normalized, weightsTensor);
+          const biased = tf.add(product, biasesTensor);
+          return tf.softmax(biased);
+        });
+        const probabilities = await probsTensor.data();
+        probsTensor.dispose();
+        
+        log(`    Inference complete: output size ${probabilities.length}`, 'ok');
+        
+        const matches = [];
+        for (let i = 0; i < probabilities.length; i++) {
+          matches.push({ name: labels[i], prob: probabilities[i] });
+        }
+        matches.sort((a,b) => b.prob - a.prob);
+        
+        log(`    Top match: "${matches[0].name}" with probability ${(matches[0].prob*100).toFixed(2)}%`, 'ok');
+      } catch(e) {
+        log(`    ERROR during inference: ${e.message}`, 'err');
+      }
+
+      log('\n✅ Diagnostic complete. Start camera and click Capture & Predict for real test.', 'ok');
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+        document.getElementById('vid').srcObject = stream;
+        log('\n📷 Camera started', 'ok');
+      } catch(e) {
+        log(`\n❌ Camera error: ${e.message}`, 'err');
+      }
+    }
+
+    async function captureAndPredict() {
+      if (!model) { log('\n❌ Load MobileNet first (Run Diagnostic)', 'err'); return; }
+      const vid = document.getElementById('vid');
+      if (!vid.srcObject) { log('\n❌ Start camera first', 'err'); return; }
+
+      log('\n[CAPTURE] Running real prediction...', 'info');
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 224; canvas.height = 224;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(vid, 0, 0, 224, 224);
+
+      try {
+        const probsTensor = tf.tidy(() => {
+          const embeddingTensor = model.infer(canvas, true);
+          const epsilon = tf.scalar(1e-8);
+          const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
+          const norm = tf.sqrt(sumSq);
+          const normalized = tf.div(embeddingTensor, tf.add(norm, epsilon));
+          
+          const product = tf.matMul(normalized, weightsTensor);
+          const biased = tf.add(product, biasesTensor);
+          return tf.softmax(biased);
+        });
+        const probabilities = await probsTensor.data();
+        probsTensor.dispose();
+
+        const matches = [];
+        for (let i = 0; i < probabilities.length; i++) {
+          matches.push({ name: labels[i], prob: probabilities[i] });
+        }
+        matches.sort((a,b) => b.prob - a.prob);
+
+        log(`  Top 5 predictions:`, 'info');
+        matches.slice(0, 5).forEach((item, rank) => {
+          const pct = (item.prob * 100).toFixed(2);
+          const cls = rank === 0 ? 'ok' : '';
+          log(`    ${rank+1}. "${item.name}" — Probability: ${pct}%`, cls);
+        });
+
+        const top = matches[0];
+        if (top.name !== 'unknown' && top.prob >= 0.55) {
+          log(`\n  ✅ ACCEPTED: "${top.name}" (${(top.prob*100).toFixed(1)}%)`, 'ok');
+        } else {
+          log(`\n  ⚠️ TOO LOW CONFIDENCE OR UNKNOWN: ${(top.prob*100).toFixed(1)}% (Threshold: 55%)`, 'warn');
+          log(`     Will be added as "Unknown Product"`, 'warn');
+        }
+      } catch(e) {
+        log(`  ❌ Inference error: ${e.message}`, 'err');
+      }
+    }
+
+    let autoInterval = null;
+    function toggleAutoCapture() {
+      const btn = document.getElementById('btn-auto');
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        btn.textContent = '🔄 Start Auto-Predict';
+        btn.style.background = '#06b6d4';
+        log('\n🔄 Auto-predict stopped.', 'info');
+      } else {
+        if (!model) { log('\n❌ Load MobileNet first (Run Diagnostic)', 'err'); return; }
+        const vid = document.getElementById('vid');
+        if (!vid.srcObject) { log('\n❌ Start camera first', 'err'); return; }
+        
+        btn.textContent = '⏸ Stop Auto-Predict';
+        btn.style.background = '#fbbf24';
+        log('\n🔄 Auto-predict started (running every 1.5s)...', 'info');
+        
+        autoInterval = setInterval(async () => {
+          await captureAndPredict();
+        }, 1500);
+      }
+    }
+  </script>
+</body>
+</html>
