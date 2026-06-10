@@ -3486,7 +3486,7 @@ async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
     if (!res.ok) throw new Error('Templates endpoint query failed');
     const matches = await res.json();
     
-    const item = matches.find(m => m.key === classKey) || matches[0];
+    const item = matches.find(m => m.key === classKey || m.key.replace('_', '') === classKey.replace('_', '')) || matches[0];
     
     if (item) {
       const newItem = {
@@ -3524,6 +3524,55 @@ async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
         document.querySelectorAll('.learned-item-badge').forEach(b => b.classList.remove('active'));
         activeBadge.classList.add('active');
         // Clear active badge after 2 seconds
+        setTimeout(() => activeBadge.classList.remove('active'), 2000);
+      }
+    } else {
+      // Robust Fallback if no template is found in the database
+      const fallbackName = classKey === 'surfexcel' ? 'Surf Excel Easy Wash Powder' :
+                           classKey === 'tata_salt' ? 'Tata Salt (1kg Pack)' :
+                           classKey === 'maggi' ? 'Maggi 2-Minute Noodles' :
+                           classKey.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      
+      const fallbackValue = classKey === 'surfexcel' ? 140.0 :
+                            classKey === 'tata_salt' ? 28.0 :
+                            classKey === 'maggi' ? 14.0 : 50.0;
+                            
+      const fallbackCategory = "Indian Groceries";
+      
+      const newItem = {
+        id: `scanned-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name: fallbackName,
+        category: fallbackCategory,
+        value: fallbackValue,
+        quantity: 1,
+        manufacturer: classKey === 'surfexcel' ? 'HUL' : classKey === 'tata_salt' ? 'Tata' : classKey === 'maggi' ? 'Nestle' : '',
+        model: '',
+        notes: 'Template loaded as fallback.',
+        tags: [classKey, 'scanned'],
+        image: frameDataUri
+      };
+      
+      AppState.scannedCart.push(newItem);
+      renderScannedCart();
+      
+      if (modelStatus) {
+        modelStatus.textContent = `Added: ${newItem.name} (${Math.round(confidence * 100)}%)`;
+        modelStatus.className = 'webcam-status-label success';
+        
+        // Reset label back to active scanner after 2.5 seconds
+        setTimeout(() => {
+          if (isScanning && modelStatus) {
+            modelStatus.textContent = 'AI Grocery Scanner Active';
+            modelStatus.className = 'webcam-status-label active';
+          }
+        }, 2500);
+      }
+      
+      // Update badge indicator
+      const activeBadge = document.querySelector(`.learned-item-badge[data-learned="${classKey}"]`);
+      if (activeBadge) {
+        document.querySelectorAll('.learned-item-badge').forEach(b => b.classList.remove('active'));
+        activeBadge.classList.add('active');
         setTimeout(() => activeBadge.classList.remove('active'), 2000);
       }
     }

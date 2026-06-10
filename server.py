@@ -269,10 +269,16 @@ def get_templates():
             
             # If query is specified, check matches
             if query:
-                name_match = query in t_copy.get('name', '').lower()
-                key_match = query in t_copy.get('key', '').lower()
-                tags_match = any(query in tag.lower() for tag in t_copy.get('tags', []))
-                category_match = query in t_copy.get('category', '').lower()
+                norm_query = query.replace('_', '').replace(' ', '').lower()
+                name_norm = t_copy.get('name', '').replace('_', '').replace(' ', '').lower()
+                key_norm = t_copy.get('key', '').replace('_', '').replace(' ', '').lower()
+                category_norm = t_copy.get('category', '').replace('_', '').replace(' ', '').lower()
+                
+                name_match = norm_query in name_norm
+                key_match = norm_query in key_norm
+                category_match = norm_query in category_norm
+                tags_match = any(norm_query in tag.replace('_', '').replace(' ', '').lower() for tag in t_copy.get('tags', []))
+                
                 if name_match or key_match or tags_match or category_match:
                     matched.append(t_copy)
             else:
