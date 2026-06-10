@@ -29,3 +29,10 @@ __pycache__/
 venv/
 env/
 .venv/
+
+# Project temporary data and model cache
+assets/verify_*
+yolov8n.pt
+X.npy
+y.npy
+scratch/
