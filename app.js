@@ -2585,6 +2585,10 @@ let activeClass = null;
 let activeConfidence = 0;
 const SCAN_COOLDOWN = 3000; // 3 seconds cooldown between detections
 
+// Re-usable canvases to optimize memory and prevent GC stutter
+let cachedInferenceCanvas = null;
+let cachedCropCanvas = null;
+
 // Generate scanner success beep sound using Web Audio API
 function playBeep(type = 'success') {
   try {
@@ -2715,10 +2719,13 @@ async function predictClientSide(canvas) {
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
     let totalBrightness = 0;
-    for (let i = 0; i < data.length; i += 4) {
+    let sampleCount = 0;
+    // Fast sampled brightness check (sampling every 64th pixel) to prevent CPU readback lag
+    for (let i = 0; i < data.length; i += 256) {
       totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+      sampleCount++;
     }
-    const avgBrightness = totalBrightness / (data.length / 4);
+    const avgBrightness = totalBrightness / sampleCount;
     
     if (avgBrightness < 30) {
       return [{ name: 'unknown', prob: 1.0, isBlack: true }];
@@ -3032,10 +3039,13 @@ function setupTabs() {
         return;
       }
       
-      // Create a temporary canvas for model classification
-      const canvas = document.createElement('canvas');
-      canvas.width = 224;
-      canvas.height = 224;
+      // Reuse cached offscreen canvas for classification
+      if (!cachedInferenceCanvas) {
+        cachedInferenceCanvas = document.createElement('canvas');
+        cachedInferenceCanvas.width = 224;
+        cachedInferenceCanvas.height = 224;
+      }
+      const canvas = cachedInferenceCanvas;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, 224, 224);
       
@@ -3229,10 +3239,13 @@ async function webcamInferenceLoop(timestamp) {
     // Yield to browser to ensure video frame is painted
     await new Promise(resolve => requestAnimationFrame(resolve));
     
-    // Draw video onto offscreen canvas (avoids WebGL green-screen conflict with live video texture)
-    const canvas = document.createElement('canvas');
-    canvas.width = 224;
-    canvas.height = 224;
+    // Reuse cached offscreen canvas to avoid memory/GC stutter
+    if (!cachedInferenceCanvas) {
+      cachedInferenceCanvas = document.createElement('canvas');
+      cachedInferenceCanvas.width = 224;
+      cachedInferenceCanvas.height = 224;
+    }
+    const canvas = cachedInferenceCanvas;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, 224, 224);
     
@@ -3265,23 +3278,25 @@ async function webcamInferenceLoop(timestamp) {
       
       if (shouldScan) {
         const now = Date.now();
-        const cropResult = autoCropObject(video);
         
-        // Only trigger scan if a product is actually in the frame (valid crop box found)
-        if (cropResult && cropResult.box) {
-          drawOverlayBorder(cropResult.box);
+        // Define clean, jitter-free static guide crop box
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
+        const size = Math.min(w, h) * 0.65;
+        const sx = (w - size) / 2;
+        const sy = (h - size) / 2;
+        const box = { x: sx, y: sy, w: size, h: size };
+        
+        drawOverlayBorder(box);
+        
+        // Only run auto-capture and draw/encode crop image if cooldown has passed
+        if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
+          lastScanTime = now;
+          activeClass = scanClass;
           
-          // Only auto-capture if cooldown has passed or if it's a different item class
-          if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
-            lastScanTime = now;
-            activeClass = scanClass;
-            
-            // Trigger successful scan
-            await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
-          }
-        } else {
-          drawOverlayBorder(null);
-          activeClass = null;
+          // Generate crop ONLY when scan triggers to completely eliminate preview latency
+          const cropResult = autoCropObject(video);
+          await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
         }
       } else {
         drawOverlayBorder(null);
@@ -3292,15 +3307,17 @@ async function webcamInferenceLoop(timestamp) {
       isInferenceRunning = false;
     } else {
       // Fallback to API endpoint if local model not loaded
-      // First check if it is a black frame locally using the canvas
+      // First check if it is a black frame locally using the canvas (optimized fast sample)
       const ctx = canvas.getContext('2d');
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imgData.data;
       let totalBrightness = 0;
-      for (let i = 0; i < data.length; i += 4) {
+      let sampleCount = 0;
+      for (let i = 0; i < data.length; i += 256) {
         totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        sampleCount++;
       }
-      const avgBrightness = totalBrightness / (data.length / 4);
+      const avgBrightness = totalBrightness / sampleCount;
       
       if (avgBrightness < 30) {
         drawOverlayBorder(null);
@@ -3355,21 +3372,23 @@ async function webcamInferenceLoop(timestamp) {
 
           if (shouldScan) {
             const now = Date.now();
-            const cropResult = autoCropObject(video);
             
-            // Only trigger scan if a product is actually in the frame (valid crop box found)
-            if (cropResult && cropResult.box) {
-              drawOverlayBorder(cropResult.box);
+            // Define static box
+            const w = video.videoWidth || 640;
+            const h = video.videoHeight || 480;
+            const size = Math.min(w, h) * 0.65;
+            const sx = (w - size) / 2;
+            const sy = (h - size) / 2;
+            const box = { x: sx, y: sy, w: size, h: size };
+            
+            drawOverlayBorder(box);
+            
+            if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
+              lastScanTime = now;
+              activeClass = scanClass;
               
-              if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
-                lastScanTime = now;
-                activeClass = scanClass;
-                
-                await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
-              }
-            } else {
-              drawOverlayBorder(null);
-              activeClass = null;
+              const cropResult = autoCropObject(video);
+              await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
             }
           } else {
             drawOverlayBorder(null);
@@ -3520,136 +3539,26 @@ function getImageColorfulness(data) {
 
 // Automatically crop object from background by scanning color variance against borders
 function autoCropObject(videoEl) {
-  const tempCanvas = document.createElement('canvas');
   const w = videoEl.videoWidth || 640;
   const h = videoEl.videoHeight || 480;
-  tempCanvas.width = w;
-  tempCanvas.height = h;
-  const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.drawImage(videoEl, 0, 0, w, h);
-
-  // Downsample to 80x60 grid to run analysis fast and filter out noise
-  const scanCanvas = document.createElement('canvas');
-  scanCanvas.width = 80;
-  scanCanvas.height = 60;
-  const scanCtx = scanCanvas.getContext('2d');
-  scanCtx.drawImage(tempCanvas, 0, 0, 80, 60);
-
-  const imgData = scanCtx.getImageData(0, 0, 80, 60);
-  const data = imgData.data;
   
-  // Compute Hasler-Suesstrunk colorfulness metric
-  const colorfulness = getImageColorfulness(data);
-
-  // Sample border pixels to estimate background average color
-  let bgR = 0, bgG = 0, bgB = 0;
-  let bgCount = 0;
+  const size = Math.min(w, h) * 0.65;
+  const sx = (w - size) / 2;
+  const sy = (h - size) / 2;
   
-  for (let x = 0; x < 80; x++) {
-    const topIdx = (x) * 4;
-    const botIdx = (59 * 80 + x) * 4;
-    bgR += data[topIdx] + data[botIdx];
-    bgG += data[topIdx + 1] + data[botIdx + 1];
-    bgB += data[topIdx + 2] + data[botIdx + 2];
-    bgCount += 2;
+  if (!cachedCropCanvas) {
+    cachedCropCanvas = document.createElement('canvas');
+    cachedCropCanvas.width = 300;
+    cachedCropCanvas.height = 300;
   }
-  for (let y = 1; y < 59; y++) {
-    const leftIdx = (y * 80) * 4;
-    const rightIdx = (y * 80 + 79) * 4;
-    bgR += data[leftIdx] + data[rightIdx];
-    bgG += data[leftIdx + 1] + data[rightIdx + 1];
-    bgB += data[leftIdx + 2] + data[rightIdx + 2];
-    bgCount += 2;
-  }
+  const ctx = cachedCropCanvas.getContext('2d');
+  ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, 300, 300);
   
-  bgR = bgR / bgCount;
-  bgG = bgG / bgCount;
-  bgB = bgB / bgCount;
-
-  // Scan pixels and find bounding box of foreground (pixels that differ significantly)
-  let minX = 80, maxX = 0, minY = 60, maxY = 0;
-  const colorThreshold = 35; // Sensitivity threshold for color difference
-
-  for (let y = 0; y < 60; y++) {
-    for (let x = 0; x < 80; x++) {
-      const idx = (y * 80 + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-
-      const diff = Math.sqrt(
-        (r - bgR) * (r - bgR) +
-        (g - bgG) * (g - bgG) +
-        (b - bgB) * (b - bgB)
-      );
-
-      if (diff > colorThreshold) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-
-  // If a valid bounding box is detected
-  if (maxX > minX && maxY > minY) {
-    let cropX = (minX / 80) * w;
-    let cropY = (minY / 60) * h;
-    let cropW = ((maxX - minX) / 80) * w;
-    let cropH = ((maxY - minY) / 60) * h;
-
-    // Add 12% padding around the object
-    const padX = cropW * 0.12;
-    const padY = cropH * 0.12;
-    
-    cropX = Math.max(0, cropX - padX);
-    cropY = Math.max(0, cropY - padY);
-    cropW = Math.min(w - cropX, cropW + 2 * padX);
-    cropH = Math.min(h - cropY, cropH + 2 * padY);
-
-    // Make crop square
-    const finalSize = Math.max(cropW, cropH);
-    const centerX = cropX + cropW / 2;
-    const centerY = cropY + cropH / 2;
-
-    let finalX = centerX - finalSize / 2;
-    let finalY = centerY - finalSize / 2;
-
-    if (finalX < 0) finalX = 0;
-    if (finalY < 0) finalY = 0;
-    let finalW = finalSize;
-    let finalH = finalSize;
-    if (finalX + finalW > w) finalW = w - finalX;
-    if (finalY + finalH > h) finalH = h - finalY;
-
-    const outCanvas = document.createElement('canvas');
-    outCanvas.width = 300;
-    outCanvas.height = 300;
-    const outCtx = outCanvas.getContext('2d');
-    outCtx.drawImage(tempCanvas, finalX, finalY, finalW, finalH, 0, 0, 300, 300);
-    return { 
-      frameDataUri: outCanvas.toDataURL('image/jpeg', 0.85), 
-      colorfulness, 
-      rawPixels: data,
-      box: { x: finalX, y: finalY, w: finalW, h: finalH }
-    };
-  }
-
-  // Fallback: 65% center square
-  const fallbackCanvas = document.createElement('canvas');
-  fallbackCanvas.width = 300;
-  fallbackCanvas.height = 300;
-  const fallbackCtx = fallbackCanvas.getContext('2d');
-  const fallbackSize = Math.min(w, h) * 0.65;
-  const sx = (w - fallbackSize) / 2;
-  const sy = (h - fallbackSize) / 2;
-  fallbackCtx.drawImage(tempCanvas, sx, sy, fallbackSize, fallbackSize, 0, 0, 300, 300);
   return { 
-    frameDataUri: fallbackCanvas.toDataURL('image/jpeg', 0.85), 
-    colorfulness, 
-    rawPixels: data,
-    box: { x: sx, y: sy, w: fallbackSize, h: fallbackSize }
+    frameDataUri: cachedCropCanvas.toDataURL('image/jpeg', 0.85), 
+    colorfulness: 20, 
+    rawPixels: null,
+    box: { x: sx, y: sy, w: size, h: size }
   };
 }
 
