@@ -2586,7 +2586,6 @@ let activeConfidence = 0;
 const SCAN_COOLDOWN = 3000; // 3 seconds cooldown between detections
 
 // Re-usable canvases to optimize memory and prevent GC stutter
-let cachedInferenceCanvas = null;
 let cachedCropCanvas = null;
 
 // Generate scanner success beep sound using Web Audio API
@@ -3039,13 +3038,10 @@ function setupTabs() {
         return;
       }
       
-      // Reuse cached offscreen canvas for classification
-      if (!cachedInferenceCanvas) {
-        cachedInferenceCanvas = document.createElement('canvas');
-        cachedInferenceCanvas.width = 224;
-        cachedInferenceCanvas.height = 224;
-      }
-      const canvas = cachedInferenceCanvas;
+      // Create temporary canvas to prevent WebGL green-screen texture caching conflict
+      const canvas = document.createElement('canvas');
+      canvas.width = 224;
+      canvas.height = 224;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, 224, 224);
       
@@ -3239,13 +3235,10 @@ async function webcamInferenceLoop(timestamp) {
     // Yield to browser to ensure video frame is painted
     await new Promise(resolve => requestAnimationFrame(resolve));
     
-    // Reuse cached offscreen canvas to avoid memory/GC stutter
-    if (!cachedInferenceCanvas) {
-      cachedInferenceCanvas = document.createElement('canvas');
-      cachedInferenceCanvas.width = 224;
-      cachedInferenceCanvas.height = 224;
-    }
-    const canvas = cachedInferenceCanvas;
+    // Create offscreen canvas to prevent WebGL green-screen texture caching conflict
+    const canvas = document.createElement('canvas');
+    canvas.width = 224;
+    canvas.height = 224;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, 224, 224);
     
