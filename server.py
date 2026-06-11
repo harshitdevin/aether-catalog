@@ -721,28 +721,19 @@ def classify_crop(img_bgr):
             calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
             return best_class, calibrated_conf
 
-        # 1. Compute logits: features_norm * W + b
+        # 1. Compute logits: features_norm * W + b (raw similarities)
         logits = np.dot(features_norm, classifier_weights) + classifier_biases
-        probs = softmax(logits)
         
-        # 2. Get top predicted class
-        top_idx = int(np.argmax(probs))
+        # 2. Get top predicted class and similarity
+        top_idx = int(np.argmax(logits))
         pred_class = classifier_classes[top_idx]
-        confidence = float(probs[top_idx])
+        similarity = float(logits[top_idx])
         
-        # 3. Use centroid similarity to reject out-of-distribution/background inputs
-        centroid_sim = 0.0
-        if pred_class in centroids:
-            centroid_sim = float(np.dot(features_norm, centroids[pred_class]))
-            
-        # Reject if softmax confidence is < 50% or if centroid similarity is too low (e.g. < 0.32)
-        if pred_class == 'unknown' or confidence < 0.50 or centroid_sim < 0.32:
+        # 3. Reject if similarity is < 0.50 or if class is unknown
+        if pred_class == 'unknown' or similarity < 0.50:
             return 'unknown', 0.0
             
-        # Calibrate/standardize the confidence score to satisfy the frontend's high confidence threshold (which accepts >= 0.80)
-        calibrated_conf = 0.80 + (confidence - 0.50) * (0.20 / 0.50)
-        calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
-        return pred_class, calibrated_conf
+        return pred_class, similarity
     except Exception as e:
         print(f"Crop classification failed: {e}")
         return 'unknown', 0.0

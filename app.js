@@ -2733,7 +2733,7 @@ async function predictClientSide(canvas) {
       
       const product = tf.matMul(normalized, weightsTensor);
       const biased = tf.add(product, biasesTensor);
-      return tf.softmax(biased);
+      return biased; // Return raw similarities directly (no softmax)
     });
     
     const probabilities = await probsTensor.data();
@@ -3649,7 +3649,7 @@ function autoCropObject(videoEl) {
     frameDataUri: fallbackCanvas.toDataURL('image/jpeg', 0.85), 
     colorfulness, 
     rawPixels: data,
-    box: null
+    box: { x: sx, y: sy, w: fallbackSize, h: fallbackSize }
   };
 }
 
