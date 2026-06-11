@@ -36,3 +36,6 @@ yolov8n.pt
 X.npy
 y.npy
 scratch/
+dataset/
+saved_model_tmp/
+

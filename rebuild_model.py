@@ -151,6 +151,36 @@ def main():
         json.dump(class_names, f)
     print(f"    Done. {num_classes} labels saved.")
 
+    # Save classifier.json (for backward compatibility)
+    print("    Writing classifier.json...")
+    biases = np.zeros(num_classes, dtype=np.float32)
+    payload = {
+        "classes": class_names,
+        "weights": W.tolist(),
+        "biases": biases.tolist()
+    }
+    with open(os.path.join(OUTPUT_DIR, 'classifier.json'), 'w', encoding='utf-8') as f:
+        json.dump(payload, f)
+    print("    Saved classifier.json")
+    
+    # Save high-performance classifier.bin (flat Float32Array)
+    print("    Writing classifier.bin...")
+    flat_weights = np.concatenate([W.flatten(), biases.flatten()]).astype(np.float32)
+    bin_output = os.path.join(OUTPUT_DIR, 'classifier.bin')
+    with open(bin_output, 'wb') as f:
+        f.write(flat_weights.tobytes())
+    print(f"    Saved binary weights to {bin_output}")
+
+    # Save centroids.json (required by the server-side OOD centroid check)
+    print("    Writing centroids.json...")
+    centroids_payload = {
+        "classes": class_names,
+        "centroids": {cls: W[:, idx].tolist() for idx, cls in enumerate(class_names)}
+    }
+    with open(os.path.join(OUTPUT_DIR, 'centroids.json'), 'w', encoding='utf-8') as f:
+        json.dump(centroids_payload, f)
+    print("    Saved centroids.json")
+
     # Cleanup
     if os.path.exists(SAVED_DIR):
         shutil.rmtree(SAVED_DIR)

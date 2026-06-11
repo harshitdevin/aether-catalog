@@ -1782,5 +1782,69 @@
     ],
     "notes": "Maggi 2-Minute Noodles by Nestle (70g Pack). Ideal for Indian households.",
     "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>maggi</text></svg>"
+  },
+  {
+    "key": "atta",
+    "name": "Aashirvaad Shudh Chakki Atta",
+    "category": "Indian Groceries",
+    "value": 460.0,
+    "manufacturer": "ITC",
+    "model": "10kg Bag",
+    "tags": [
+      "atta",
+      "flour",
+      "wheat",
+      "roti"
+    ],
+    "notes": "Aashirvaad Shudh Chakki Atta (10kg Bag). 100% pure whole wheat flour.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>atta</text></svg>"
+  },
+  {
+    "key": "taj_mahal",
+    "name": "Brooke Bond Taj Mahal Tea",
+    "category": "Indian Groceries",
+    "value": 350.0,
+    "manufacturer": "HUL",
+    "model": "500g Pack",
+    "tags": [
+      "tea",
+      "chai",
+      "taj mahal",
+      "beverage"
+    ],
+    "notes": "Brooke Bond Taj Mahal Tea (500g Pack). Premium tea blend.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>taj_mahal</text></svg>"
+  },
+  {
+    "key": "haldirams",
+    "name": "Haldiram's Bhujia Sev",
+    "category": "Indian Groceries",
+    "value": 110.0,
+    "manufacturer": "Haldiram's",
+    "model": "400g Pack",
+    "tags": [
+      "snacks",
+      "bhujia",
+      "haldirams",
+      "namkeen"
+    ],
+    "notes": "Haldiram's Bhujia Sev (400g Pack). Crispy and spicy chickpea flour noodles.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>haldirams</text></svg>"
+  },
+  {
+    "key": "dettol",
+    "name": "Dettol Antiseptic Liquid",
+    "category": "Indian Groceries",
+    "value": 220.0,
+    "manufacturer": "Reckitt Benckiser",
+    "model": "500ml Bottle",
+    "tags": [
+      "dettol",
+      "handwash",
+      "antiseptic",
+      "hygiene"
+    ],
+    "notes": "Dettol Liquid Antiseptic (500ml Bottle) for first aid and personal hygiene.",
+    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>dettol</text></svg>"
   }
 ]

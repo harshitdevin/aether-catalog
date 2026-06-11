@@ -393,6 +393,13 @@ def extract_features_and_train():
         json.dump(classifier_payload, f)
     print("    Saved web_model/classifier.json")
     
+    # Save high-performance binary weights
+    flat_weights = np.concatenate([weights.flatten(), biases.flatten()]).astype(np.float32)
+    bin_output = os.path.join(WEB_MODEL_DIR, 'classifier.bin')
+    with open(bin_output, 'wb') as f:
+        f.write(flat_weights.tobytes())
+    print(f"    Saved binary weights to {bin_output}")
+    
     # Save labels.json
     with open(os.path.join(WEB_MODEL_DIR, 'labels.json'), 'w', encoding='utf-8') as f:
         json.dump(classes, f)

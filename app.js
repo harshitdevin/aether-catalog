@@ -2632,18 +2632,61 @@ async function initTFModel() {
       console.warn('WebGL backend failed, using default:', e);
     }
     
-    // Fetch the classifier configuration containing classes, weights, and biases
-    const res = await fetch('/web_model/classifier.json');
-    if (!res.ok) throw new Error('Failed to load classifier.json from server');
+    // 1. Fetch labels first
+    let classNames = [];
+    try {
+      const labelsRes = await fetch('/web_model/labels.json');
+      if (labelsRes.ok) {
+        classNames = await labelsRes.json();
+      }
+    } catch (e) {
+      console.warn('Failed to load labels.json, will check classifier.json:', e);
+    }
+
+    // 2. Attempt to load from high-performance binary file first
+    let loadedFromBin = false;
+    try {
+      const binRes = await fetch('/web_model/classifier.bin');
+      if (binRes.ok) {
+        const buffer = await binRes.arrayBuffer();
+        const floatArray = new Float32Array(buffer);
+        const numClasses = floatArray.length / 1281; // 1280 weights + 1 bias per class
+        
+        if (Number.isInteger(numClasses) && numClasses > 0) {
+          const weightsData = floatArray.subarray(0, 1280 * numClasses);
+          const biasesData = floatArray.subarray(1280 * numClasses);
+          
+          if (weightsTensor) weightsTensor.dispose();
+          if (biasesTensor) biasesTensor.dispose();
+          
+          weightsTensor = tf.tensor2d(weightsData, [1280, numClasses]);
+          biasesTensor = tf.tensor1d(biasesData);
+          
+          tfjsLabels = classNames.length === numClasses ? classNames : Array.from({length: numClasses}, (_, i) => classNames[i] || `class_${i}`);
+          loadedFromBin = true;
+          console.log(`Successfully loaded ${numClasses} classes from binary weights!`);
+        }
+      }
+    } catch (binErr) {
+      console.warn('Failed to load binary classifier, falling back to JSON:', binErr);
+    }
     
-    const data = await res.json();
-    tfjsLabels = data.classes || [];
-    
-    if (weightsTensor) weightsTensor.dispose();
-    if (biasesTensor) biasesTensor.dispose();
-    
-    weightsTensor = tf.tensor2d(data.weights);
-    biasesTensor = tf.tensor1d(data.biases);
+    // 3. Fallback to classifier.json if binary load failed
+    if (!loadedFromBin) {
+      const res = await fetch('/web_model/classifier.json');
+      if (!res.ok) throw new Error('Failed to load classifier.json from server');
+      
+      const data = await res.json();
+      tfjsLabels = data.classes || [];
+      const numClasses = tfjsLabels.length;
+      
+      if (weightsTensor) weightsTensor.dispose();
+      if (biasesTensor) biasesTensor.dispose();
+      
+      weightsTensor = tf.tensor2d(data.weights);
+      biasesTensor = tf.tensor1d(data.biases);
+      console.log(`Loaded ${numClasses} classes from JSON weights.`);
+    }
     
     // Load MobileNetV2 from CDN
     tfjsModel = await mobilenet.load({version: 2, alpha: 1.0});
@@ -2667,6 +2710,20 @@ async function predictClientSide(canvas) {
   }
   
   try {
+    // Check if black/dark frame
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    let totalBrightness = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+    }
+    const avgBrightness = totalBrightness / (data.length / 4);
+    
+    if (avgBrightness < 30) {
+      return [{ name: 'unknown', prob: 1.0, isBlack: true }];
+    }
+    
     const probsTensor = tf.tidy(() => {
       const embeddingTensor = tfjsModel.infer(canvas, true);
       const epsilon = tf.scalar(1e-8);
@@ -2692,6 +2749,78 @@ async function predictClientSide(canvas) {
     console.error('Error during client-side prediction:', err);
     return null;
   }
+}
+
+// Draw smart dynamic bounding box on top of the live webcam feed
+function drawOverlayBorder(box) {
+  const overlay = DOM.webcamOverlay;
+  if (!overlay) return;
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  
+  if (!box || !isScanning) return;
+  
+  const video = DOM.webcamFeed;
+  if (!video) return;
+  
+  const displayW = video.clientWidth;
+  const displayH = video.clientHeight;
+  
+  if (overlay.width !== displayW || overlay.height !== displayH) {
+    overlay.width = displayW;
+    overlay.height = displayH;
+  }
+  
+  const streamW = video.videoWidth || 640;
+  const streamH = video.videoHeight || 480;
+  
+  const scaleX = displayW / streamW;
+  const scaleY = displayH / streamH;
+  
+  const rx = box.x * scaleX;
+  const ry = box.y * scaleY;
+  const rw = box.w * scaleX;
+  const rh = box.h * scaleY;
+  
+  ctx.strokeStyle = '#06b6d4'; // Cyan primary accent
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(6, 182, 212, 0.5)';
+  ctx.shadowBlur = 8;
+  
+  const r = 12; // corner radius
+  const len = Math.min(rw, rh) * 0.2; // length of corner lines
+  
+  // Top-left corner
+  ctx.beginPath();
+  ctx.moveTo(rx, ry + len);
+  ctx.lineTo(rx, ry + r);
+  ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+  ctx.lineTo(rx + len, ry);
+  ctx.stroke();
+  
+  // Top-right corner
+  ctx.beginPath();
+  ctx.moveTo(rx + rw - len, ry);
+  ctx.lineTo(rx + rw - r, ry);
+  ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+  ctx.lineTo(rx + rw, ry + len);
+  ctx.stroke();
+  
+  // Bottom-left corner
+  ctx.beginPath();
+  ctx.moveTo(rx, ry + rh - len);
+  ctx.lineTo(rx, ry + rh - r);
+  ctx.quadraticCurveTo(rx, ry + rh, rx + r, ry + rh);
+  ctx.lineTo(rx + len, ry + rh);
+  ctx.stroke();
+  
+  // Bottom-right corner
+  ctx.beginPath();
+  ctx.moveTo(rx + rw - len, ry + rh);
+  ctx.lineTo(rx + rw - r, ry + rh);
+  ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw, ry + rh - r);
+  ctx.lineTo(rx + rw, ry + rh - len);
+  ctx.stroke();
 }
 
 function renderScannedCart() {
@@ -2877,6 +3006,26 @@ function setupTabs() {
       const frameDataUri = cropResult.frameDataUri;
       const colorfulness = cropResult.colorfulness;
       
+      // Calculate average brightness to detect black/dark inputs
+      const cropPixels = cropResult.rawPixels;
+      let totalBrightness = 0;
+      if (cropPixels) {
+        for (let i = 0; i < cropPixels.length; i += 4) {
+          totalBrightness += (cropPixels[i] + cropPixels[i + 1] + cropPixels[i + 2]) / 3;
+        }
+      }
+      const avgBrightness = cropPixels ? (totalBrightness / (cropPixels.length / 4)) : 0;
+      
+      if (avgBrightness < 30) {
+        if (modelStatus) {
+          modelStatus.textContent = 'Capture failed: Camera feed is dark/obstructed';
+          modelStatus.className = 'webcam-status-label active';
+        }
+        drawOverlayBorder(null);
+        activeClass = null;
+        return;
+      }
+      
       // If the image is dull/neutral, treat it immediately as unknown
       if (colorfulness < -1) {
         await handleSuccessfulScan('unknown', 0.0, frameDataUri);
@@ -3039,7 +3188,7 @@ function setupTabs() {
 }
 
 let lastInferenceTime = 0;
-const INFERENCE_INTERVAL = 800; // Run inference every 800ms to keep performance smooth and not overload backend
+const INFERENCE_INTERVAL = 300; // Run inference every 300ms to make identification smooth and frequent
 
 async function webcamInferenceLoop(timestamp) {
   if (!isScanning) return;
@@ -3090,37 +3239,77 @@ async function webcamInferenceLoop(timestamp) {
     const clientMatches = await predictClientSide(canvas);
     
     if (clientMatches && clientMatches.length > 0) {
-      const predictedClass = clientMatches[0].name;
-      const maxProb = clientMatches[0].prob;
+      const bestMatch = clientMatches[0];
+      const isBlack = !!bestMatch.isBlack;
       
-      if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.30) {
-        const now = Date.now();
-        // Only auto-capture if cooldown has passed or if it's a different item class
-        if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
-          // Capture snapshot and automatically crop the object boundaries
-          const cropResult = autoCropObject(video);
-          
-          // Reject auto-scanning of dull background noise or hands
-          if (cropResult.colorfulness < -1) {
-            activeClass = null; // Reset
-            isInferenceRunning = false;
-            requestAnimationFrame(webcamInferenceLoop);
-            return;
+      let scanClass = null;
+      let scanConfidence = 0;
+      let shouldScan = false;
+      
+      if (isBlack) {
+        scanClass = null;
+        scanConfidence = 0;
+        shouldScan = false;
+      } else {
+        const predictedClass = bestMatch.name;
+        const maxProb = bestMatch.prob;
+        
+        if (predictedClass && predictedClass !== 'unknown') {
+          if (maxProb >= 0.50) {
+            scanClass = predictedClass;
+            scanConfidence = maxProb;
+            shouldScan = true;
           }
-
-          lastScanTime = now;
-          activeClass = predictedClass;
-          
-          // Trigger successful scan
-          await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
         }
-      } else if (maxProb < 0.20) {
-        // Clear active class when item is removed from camera view
-        activeClass = null;
+      }
+      
+      if (shouldScan) {
+        const now = Date.now();
+        const cropResult = autoCropObject(video);
+        
+        // Only trigger scan if a product is actually in the frame (valid crop box found)
+        if (cropResult && cropResult.box) {
+          drawOverlayBorder(cropResult.box);
+          
+          // Only auto-capture if cooldown has passed or if it's a different item class
+          if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
+            lastScanTime = now;
+            activeClass = scanClass;
+            
+            // Trigger successful scan
+            await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
+          }
+        } else {
+          drawOverlayBorder(null);
+          activeClass = null;
+        }
+      } else {
+        drawOverlayBorder(null);
+        if (isBlack || bestMatch.name === 'unknown' || bestMatch.prob < 0.50) {
+          activeClass = null;
+        }
       }
       isInferenceRunning = false;
     } else {
       // Fallback to API endpoint if local model not loaded
+      // First check if it is a black frame locally using the canvas
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      let totalBrightness = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+      }
+      const avgBrightness = totalBrightness / (data.length / 4);
+      
+      if (avgBrightness < 30) {
+        drawOverlayBorder(null);
+        activeClass = null;
+        isInferenceRunning = false;
+        requestAnimationFrame(webcamInferenceLoop);
+        return;
+      }
+
       canvas.toBlob(async (blob) => {
         if (!blob) {
           isInferenceRunning = false;
@@ -3152,24 +3341,41 @@ async function webcamInferenceLoop(timestamp) {
             }
           }
 
-          if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.30) {
-            const now = Date.now();
-            if (now - lastScanTime > SCAN_COOLDOWN || predictedClass !== activeClass) {
-              const cropResult = autoCropObject(video);
-              
-              if (cropResult.colorfulness < -1) {
-                activeClass = null;
-                isInferenceRunning = false;
-                return;
-              }
-
-              lastScanTime = now;
-              activeClass = predictedClass;
-              
-              await handleSuccessfulScan(predictedClass, maxProb, cropResult.frameDataUri);
+          let scanClass = null;
+          let scanConfidence = 0;
+          let shouldScan = false;
+          
+          if (predictedClass && predictedClass !== 'unknown') {
+            if (maxProb >= 0.50) {
+              scanClass = predictedClass;
+              scanConfidence = maxProb;
+              shouldScan = true;
             }
-          } else if (maxProb < 0.20) {
-            activeClass = null;
+          }
+
+          if (shouldScan) {
+            const now = Date.now();
+            const cropResult = autoCropObject(video);
+            
+            // Only trigger scan if a product is actually in the frame (valid crop box found)
+            if (cropResult && cropResult.box) {
+              drawOverlayBorder(cropResult.box);
+              
+              if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
+                lastScanTime = now;
+                activeClass = scanClass;
+                
+                await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
+              }
+            } else {
+              drawOverlayBorder(null);
+              activeClass = null;
+            }
+          } else {
+            drawOverlayBorder(null);
+            if (predictedClass === 'unknown' || maxProb < 0.50) {
+              activeClass = null;
+            }
           }
         } catch (err) {
           console.error('Auto-inference API fallback error:', err);
@@ -3422,7 +3628,12 @@ function autoCropObject(videoEl) {
     outCanvas.height = 300;
     const outCtx = outCanvas.getContext('2d');
     outCtx.drawImage(tempCanvas, finalX, finalY, finalW, finalH, 0, 0, 300, 300);
-    return { frameDataUri: outCanvas.toDataURL('image/jpeg', 0.85), colorfulness, rawPixels: data };
+    return { 
+      frameDataUri: outCanvas.toDataURL('image/jpeg', 0.85), 
+      colorfulness, 
+      rawPixels: data,
+      box: { x: finalX, y: finalY, w: finalW, h: finalH }
+    };
   }
 
   // Fallback: 65% center square
@@ -3434,7 +3645,12 @@ function autoCropObject(videoEl) {
   const sx = (w - fallbackSize) / 2;
   const sy = (h - fallbackSize) / 2;
   fallbackCtx.drawImage(tempCanvas, sx, sy, fallbackSize, fallbackSize, 0, 0, 300, 300);
-  return { frameDataUri: fallbackCanvas.toDataURL('image/jpeg', 0.85), colorfulness, rawPixels: data };
+  return { 
+    frameDataUri: fallbackCanvas.toDataURL('image/jpeg', 0.85), 
+    colorfulness, 
+    rawPixels: data,
+    box: null
+  };
 }
 
 // Start live camera scanning
@@ -3517,6 +3733,7 @@ function stopWebcam() {
   if (!btn) return;
   
   isScanning = false;
+  drawOverlayBorder(null);
   
   // Clear active badges
   document.querySelectorAll('.learned-item-badge').forEach(b => b.classList.remove('active'));
@@ -3553,8 +3770,8 @@ function stopWebcam() {
 async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
   const modelStatus = DOM.webcamStatus;
 
-  // Handle low-confidence / out-of-distribution (untrained) products
-  if (classKey === 'unknown' || confidence < 0.30) {
+  // Handle explicitly unknown / untrained or low-confidence products
+  if (classKey === 'unknown' || confidence < 0.50) {
     playBeep('warning'); // Warning beep
     
     const newItem = {

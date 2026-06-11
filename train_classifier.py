@@ -148,6 +148,19 @@ def main():
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(payload, f)
         
+    # Save high-performance binary weights
+    flat_weights = np.concatenate([weights.flatten(), biases.flatten()]).astype(np.float32)
+    bin_output = os.path.join(os.path.dirname(OUTPUT_FILE), 'classifier.bin')
+    with open(bin_output, 'wb') as f:
+        f.write(flat_weights.tobytes())
+    print(f"    Saved binary weights to {bin_output}")
+    
+    # Save labels mapping
+    labels_output = os.path.join(os.path.dirname(OUTPUT_FILE), 'labels.json')
+    with open(labels_output, 'w', encoding='utf-8') as f:
+        json.dump(class_names, f)
+    print(f"    Saved labels mapping to {labels_output}")
+        
     print("Done! Classifier generated successfully.")
 
 if __name__ == '__main__':
