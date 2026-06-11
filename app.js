@@ -2587,6 +2587,16 @@ const SCAN_COOLDOWN = 3000; // 3 seconds cooldown between detections
 
 // Re-usable canvases to optimize memory and prevent GC stutter
 let cachedCropCanvas = null;
+let cachedInferenceCanvas = null;
+
+function getInferenceCanvas() {
+  if (!cachedInferenceCanvas) {
+    cachedInferenceCanvas = document.createElement('canvas');
+    cachedInferenceCanvas.width = 224;
+    cachedInferenceCanvas.height = 224;
+  }
+  return cachedInferenceCanvas;
+}
 
 // Generate scanner success beep sound using Web Audio API
 function playBeep(type = 'success') {
@@ -2626,14 +2636,16 @@ async function initTFModel() {
   const modelStatus = DOM.webcamStatus;
   if (!modelStatus) return;
   
+  const tStart = performance.now();
   try {
     modelStatus.textContent = 'Initializing AI Scanner...';
     
     try {
+      const tBackend = performance.now();
       // Set WASM paths to load binary modules directly from jsdelivr CDN
       tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.17.0/dist/');
       await tf.setBackend('wasm');
-      console.log('TF.js successfully using high-speed WASM backend (avoids WebGL green-screen virtual cam bugs)');
+      console.log(`[Profiling] TF.js backend set to WASM in ${(performance.now() - tBackend).toFixed(2)}ms`);
     } catch (e) {
       console.warn('WASM backend failed, falling back to CPU:', e);
       try {
@@ -2643,12 +2655,15 @@ async function initTFModel() {
       }
     }
     
+    const timestamp = Date.now();
     // 1. Fetch labels first
     let classNames = [];
     try {
-      const labelsRes = await fetch('/web_model/labels.json');
+      const tLabels = performance.now();
+      const labelsRes = await fetch(`/web_model/labels.json?t=${timestamp}`);
       if (labelsRes.ok) {
         classNames = await labelsRes.json();
+        console.log(`[Profiling] Fetch labels.json took ${(performance.now() - tLabels).toFixed(2)}ms`);
       }
     } catch (e) {
       console.warn('Failed to load labels.json, will check classifier.json:', e);
@@ -2657,7 +2672,8 @@ async function initTFModel() {
     // 2. Attempt to load from high-performance binary file first
     let loadedFromBin = false;
     try {
-      const binRes = await fetch('/web_model/classifier.bin');
+      const tBin = performance.now();
+      const binRes = await fetch(`/web_model/classifier.bin?t=${timestamp}`);
       if (binRes.ok) {
         const buffer = await binRes.arrayBuffer();
         const floatArray = new Float32Array(buffer);
@@ -2675,7 +2691,7 @@ async function initTFModel() {
           
           tfjsLabels = classNames.length === numClasses ? classNames : Array.from({length: numClasses}, (_, i) => classNames[i] || `class_${i}`);
           loadedFromBin = true;
-          console.log(`Successfully loaded ${numClasses} classes from binary weights!`);
+          console.log(`[Profiling] Loaded ${numClasses} classes from classifier.bin successfully in ${(performance.now() - tBin).toFixed(2)}ms`);
         }
       }
     } catch (binErr) {
@@ -2684,7 +2700,8 @@ async function initTFModel() {
     
     // 3. Fallback to classifier.json if binary load failed
     if (!loadedFromBin) {
-      const res = await fetch('/web_model/classifier.json');
+      const tJson = performance.now();
+      const res = await fetch(`/web_model/classifier.json?t=${timestamp}`);
       if (!res.ok) throw new Error('Failed to load classifier.json from server');
       
       const data = await res.json();
@@ -2696,12 +2713,15 @@ async function initTFModel() {
       
       weightsTensor = tf.tensor2d(data.weights);
       biasesTensor = tf.tensor1d(data.biases);
-      console.log(`Loaded ${numClasses} classes from JSON weights.`);
+      console.log(`[Profiling] Loaded ${numClasses} classes from classifier.json successfully in ${(performance.now() - tJson).toFixed(2)}ms`);
     }
     
     // Load MobileNetV2 from CDN
+    const tMobileNet = performance.now();
     tfjsModel = await mobilenet.load({version: 2, alpha: 1.0});
+    console.log(`[Profiling] MobileNetV2 loaded in ${(performance.now() - tMobileNet).toFixed(2)}ms`);
     
+    console.log(`[Profiling] Total model load time (client side): ${(performance.now() - tStart).toFixed(2)}ms`);
     modelStatus.textContent = 'AI Grocery Scanner Ready';
     modelStatus.classList.add('active');
   } catch (err) {
@@ -2720,6 +2740,7 @@ async function predictClientSide(canvas) {
     return null;
   }
   
+  const tStart = performance.now();
   try {
     // Check if black/dark frame
     const ctx = canvas.getContext('2d');
@@ -2738,8 +2759,15 @@ async function predictClientSide(canvas) {
       return [{ name: 'unknown', prob: 1.0, isBlack: true }];
     }
     
+    let tFeat = 0;
+    let tSearch = 0;
+    
     const probsTensor = tf.tidy(() => {
+      const t0 = performance.now();
       const embeddingTensor = tfjsModel.infer(canvas, true);
+      tFeat = performance.now() - t0;
+      
+      const t1 = performance.now();
       const epsilon = tf.scalar(1e-8);
       const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
       const norm = tf.sqrt(sumSq);
@@ -2747,6 +2775,7 @@ async function predictClientSide(canvas) {
       
       const product = tf.matMul(normalized, weightsTensor);
       const biased = tf.add(product, biasesTensor);
+      tSearch = performance.now() - t1;
       return biased; // Return raw similarities directly (no softmax)
     });
     
@@ -2758,6 +2787,8 @@ async function predictClientSide(canvas) {
       matches.push({ name: tfjsLabels[i], prob: probabilities[i] });
     }
     matches.sort((a, b) => b.prob - a.prob);
+    
+    console.log(`[Profiling] [Inference] Client-side prediction took ${(performance.now() - tStart).toFixed(2)}ms (Feature extraction: ${tFeat.toFixed(2)}ms, Similarity search: ${tSearch.toFixed(2)}ms)`);
     return matches;
   } catch (err) {
     console.error('Error during client-side prediction:', err);
@@ -3046,10 +3077,8 @@ function setupTabs() {
         return;
       }
       
-      // Create temporary canvas to prevent WebGL green-screen texture caching conflict
-      const canvas = document.createElement('canvas');
-      canvas.width = 224;
-      canvas.height = 224;
+      // Reuse cached offscreen canvas to prevent memory leaks and GC pauses
+      const canvas = getInferenceCanvas();
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, 224, 224);
       
@@ -3243,10 +3272,8 @@ async function webcamInferenceLoop(timestamp) {
     // Yield to browser to ensure video frame is painted
     await new Promise(resolve => requestAnimationFrame(resolve));
     
-    // Create offscreen canvas to prevent WebGL green-screen texture caching conflict
-    const canvas = document.createElement('canvas');
-    canvas.width = 224;
-    canvas.height = 224;
+    // Reuse cached offscreen canvas to prevent memory leaks and GC pauses
+    const canvas = getInferenceCanvas();
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, 224, 224);
     
@@ -3711,9 +3738,11 @@ async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
   playBeep('success');
   
   try {
+    const tDb = performance.now();
     const res = await fetch(`/api/templates?q=${encodeURIComponent(classKey)}`);
     if (!res.ok) throw new Error('Templates endpoint query failed');
     const matches = await res.json();
+    console.log(`[Profiling] [Database Query] Templates fetch took ${(performance.now() - tDb).toFixed(2)}ms`);
     
     const item = matches.find(m => m.key === classKey || m.key.replace('_', '') === classKey.replace('_', '')) || matches[0];
     

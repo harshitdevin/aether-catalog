@@ -285,7 +285,7 @@ def main():
         
     # 2. Get class names
     print("Loading class names from dataset directory...")
-    class_names = sorted([d for d in os.listdir(dataset_dir) if os.path.isdir(os.path.join(dataset_dir, d))])
+    class_names = sorted([d for d in os.listdir(dataset_dir) if os.path.isdir(os.path.join(dataset_dir, d)) and not d.startswith('temp_')])
     print(f"Dataset classes loaded: {len(class_names)} classes.")
     
     # 3. Build Prototypical Few-Shot Classifier with Pretrained MobileNetV2

@@ -10,6 +10,8 @@
     .ok { color: #4ade80; } .err { color: #f87171; } .info { color: #60a5fa; } .warn { color: #fbbf24; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.17.0/dist/tf-converter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.17.0/dist/tf-backend-wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
 </head>
 <body>
@@ -38,35 +40,87 @@
       document.getElementById('log').innerHTML = '';
       log('=== TF.js MobileNet + Classifier Diagnostic ===', 'info');
       
-      // 1. Check TF.js
+      const tStart = Date.now();
+      
+      // 1. Check TF.js and set backend
       log(`\n[1] TF.js version: ${tf.version.tfjs}`, 'ok');
-      log(`    Backend: ${tf.getBackend()}`);
+      log(`    Current Backend: ${tf.getBackend()}`);
       
       try {
-        await tf.setBackend('webgl');
-        log(`    Backend set to: ${tf.getBackend()}`, 'ok');
+        tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.17.0/dist/');
+        await tf.setBackend('wasm');
+        log(`    Backend set to WASM successfully`, 'ok');
       } catch(e) {
-        log(`    WebGL failed, using: ${tf.getBackend()}`, 'warn');
+        log(`    WASM backend load failed: ${e.message}. Trying WebGL...`, 'warn');
+        try {
+          await tf.setBackend('webgl');
+          log(`    Backend set to WebGL successfully`, 'ok');
+        } catch(webglErr) {
+          log(`    WebGL failed, using fallback: ${tf.getBackend()}`, 'warn');
+        }
       }
 
-      // 2. Fetch classifier.json
-      log('\n[2] Fetching classifier.json...', 'info');
+      // 2. Fetch weights (binary first)
+      log('\n[2] Fetching classifier weights (binary first)...', 'info');
+      const timestamp = Date.now();
+      let loadedFromBin = false;
       try {
-        const res = await fetch('/web_model/classifier.json');
-        const data = await res.json();
-        labels = data.classes;
+        const tBin = Date.now();
+        // Try to load labels first
+        let classNames = [];
+        try {
+          const labelsRes = await fetch(`/web_model/labels.json?t=${timestamp}`);
+          if (labelsRes.ok) {
+            classNames = await labelsRes.json();
+          }
+        } catch (labelsErr) {
+          log(`    Labels fetch warning: ${labelsErr.message}`, 'warn');
+        }
         
-        if (weightsTensor) weightsTensor.dispose();
-        if (biasesTensor) biasesTensor.dispose();
-        
-        weightsTensor = tf.tensor2d(data.weights);
-        biasesTensor = tf.tensor1d(data.biases);
-        
-        log(`    Classifier loaded: ${labels.length} classes`, 'ok');
-        log(`    First 5 classes: ${labels.slice(0,5).join(', ')}`);
+        const binRes = await fetch(`/web_model/classifier.bin?t=${timestamp}`);
+        if (binRes.ok) {
+          const buffer = await binRes.arrayBuffer();
+          const floatArray = new Float32Array(buffer);
+          const numClasses = floatArray.length / 1281; // 1280 weights + 1 bias per class
+          
+          if (Number.isInteger(numClasses) && numClasses > 0) {
+            const weightsData = floatArray.subarray(0, 1280 * numClasses);
+            const biasesData = floatArray.subarray(1280 * numClasses);
+            
+            if (weightsTensor) weightsTensor.dispose();
+            if (biasesTensor) biasesTensor.dispose();
+            
+            weightsTensor = tf.tensor2d(weightsData, [1280, numClasses]);
+            biasesTensor = tf.tensor1d(biasesData);
+            
+            labels = classNames.length === numClasses ? classNames : Array.from({length: numClasses}, (_, i) => classNames[i] || `class_${i}`);
+            loadedFromBin = true;
+            log(`    Successfully loaded ${numClasses} classes from classifier.bin in ${Date.now() - tBin}ms`, 'ok');
+          }
+        }
       } catch(e) {
-        log(`    ERROR: ${e.message}`, 'err');
-        return;
+        log(`    Binary load failed, falling back to JSON: ${e.message}`, 'warn');
+      }
+
+      if (!loadedFromBin) {
+        log('    Fetching fallback classifier.json...', 'info');
+        try {
+          const tJson = Date.now();
+          const res = await fetch(`/web_model/classifier.json?t=${timestamp}`);
+          const data = await res.json();
+          labels = data.classes;
+          
+          if (weightsTensor) weightsTensor.dispose();
+          if (biasesTensor) biasesTensor.dispose();
+          
+          weightsTensor = tf.tensor2d(data.weights);
+          biasesTensor = tf.tensor1d(data.biases);
+          log(`    Classifier loaded from classifier.json: ${labels.length} classes in ${Date.now() - tJson}ms`, 'ok');
+          log(`    First 5 classes: ${labels.slice(0,5).join(', ')}`);
+        } catch(e) {
+          log(`    ERROR loading JSON classifier: ${e.message}`, 'err');
+          return;
+        }
       }
 
       // 3. Load MobileNet
@@ -83,27 +137,40 @@
       // 4. Test similarity matching with dummy input
       log('\n[4] Running inference on dummy (random) input...', 'info');
       try {
+        const tDummy = Date.now();
         const canvas = document.createElement('canvas');
         canvas.width = 224; canvas.height = 224;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ff0000';
         ctx.fillRect(0, 0, 224, 224); // Red square
         
+        let tFeat = 0;
+        let tSearch = 0;
         const probsTensor = tf.tidy(() => {
+          const t0 = performance.now();
           const embeddingTensor = model.infer(canvas, true);
+          tFeat = performance.now() - t0;
+          
+          const t1 = performance.now();
           const epsilon = tf.scalar(1e-8);
           const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
           const norm = tf.sqrt(sumSq);
           const normalized = tf.div(embeddingTensor, tf.add(norm, epsilon));
           
-          const product = tf.matMul(normalized, weightsTensor);
-          const biased = tf.add(product, biasesTensor);
+          // Cosine similarity
+          const cosineSim = tf.matMul(normalized, weightsTensor);
+          // Query-key scale multiplier (15.0) to calibrate softmax distribution
+          const scaledLogits = tf.mul(cosineSim, tf.scalar(15.0));
+          const biased = tf.add(scaledLogits, biasesTensor);
+          
+          tSearch = performance.now() - t1;
           return tf.softmax(biased);
         });
         const probabilities = await probsTensor.data();
         probsTensor.dispose();
         
-        log(`    Inference complete: output size ${probabilities.length}`, 'ok');
+        log(`    Inference complete in ${Date.now() - tDummy}ms (Feature extraction: ${tFeat.toFixed(2)}ms, Similarity search: ${tSearch.toFixed(2)}ms)`, 'ok');
+        log(`    Output size: ${probabilities.length} classes`);
         
         const matches = [];
         for (let i = 0; i < probabilities.length; i++) {
@@ -112,6 +179,7 @@
         matches.sort((a,b) => b.prob - a.prob);
         
         log(`    Top match: "${matches[0].name}" with probability ${(matches[0].prob*100).toFixed(2)}%`, 'ok');
+        log(`    Total diagnostic setup took ${Date.now() - tStart}ms`, 'ok');
       } catch(e) {
         log(`    ERROR during inference: ${e.message}`, 'err');
       }
@@ -136,21 +204,34 @@
 
       log('\n[CAPTURE] Running real prediction...', 'info');
       
+      const tStart = Date.now();
+      
       const canvas = document.createElement('canvas');
       canvas.width = 224; canvas.height = 224;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(vid, 0, 0, 224, 224);
 
       try {
+        let tFeat = 0;
+        let tSearch = 0;
         const probsTensor = tf.tidy(() => {
+          const t0 = performance.now();
           const embeddingTensor = model.infer(canvas, true);
+          tFeat = performance.now() - t0;
+          
+          const t1 = performance.now();
           const epsilon = tf.scalar(1e-8);
           const sumSq = tf.sum(tf.square(embeddingTensor), 1, true);
           const norm = tf.sqrt(sumSq);
           const normalized = tf.div(embeddingTensor, tf.add(norm, epsilon));
           
-          const product = tf.matMul(normalized, weightsTensor);
-          const biased = tf.add(product, biasesTensor);
+          // Cosine similarity
+          const cosineSim = tf.matMul(normalized, weightsTensor);
+          // Temperature scaling (scale = 15.0) to calibrate softmax
+          const scaledLogits = tf.mul(cosineSim, tf.scalar(15.0));
+          const biased = tf.add(scaledLogits, biasesTensor);
+          
+          tSearch = performance.now() - t1;
           return tf.softmax(biased);
         });
         const probabilities = await probsTensor.data();
@@ -162,6 +243,7 @@
         }
         matches.sort((a,b) => b.prob - a.prob);
 
+        log(`  Prediction completed in ${Date.now() - tStart}ms (Feature extraction: ${tFeat.toFixed(2)}ms, Similarity search: ${tSearch.toFixed(2)}ms)`, 'ok');
         log(`  Top 5 predictions:`, 'info');
         matches.slice(0, 5).forEach((item, rank) => {
           const pct = (item.prob * 100).toFixed(2);

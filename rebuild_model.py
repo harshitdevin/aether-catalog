@@ -28,6 +28,7 @@ def main():
     class_names = sorted([
         d for d in os.listdir(DATASET_DIR)
         if os.path.isdir(os.path.join(DATASET_DIR, d))
+        and not d.startswith('temp_')
     ])
     num_classes = len(class_names)
     print(f"[1] Classes found: {num_classes}")

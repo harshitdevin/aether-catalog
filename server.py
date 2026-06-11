@@ -564,26 +564,63 @@ classes_list = []
 classifier_weights = None
 classifier_biases = None
 classifier_classes = []
+centroids_matrix_cached = None
+
+FEATURES_CACHE_PATH = os.path.join(os.path.dirname(__file__), 'web_model', 'features_cache.npz')
+
+def load_features_cache():
+    if not os.path.exists(FEATURES_CACHE_PATH):
+        return {}
+    try:
+        data = np.load(FEATURES_CACHE_PATH, allow_pickle=True)
+        paths = data.get('paths', np.array([]))
+        mtimes = data.get('mtimes', np.array([]))
+        embeddings = data.get('embeddings', np.array([]))
+        cache = {}
+        for i, p in enumerate(paths):
+            if i < len(mtimes) and i < len(embeddings):
+                cache[p] = (float(mtimes[i]), embeddings[i])
+        return cache
+    except Exception as e:
+        print(f"Error loading features cache: {e}")
+        return {}
+
+def save_features_cache(cache):
+    try:
+        os.makedirs(os.path.dirname(FEATURES_CACHE_PATH), exist_ok=True)
+        paths = np.array(list(cache.keys()))
+        mtimes = np.array([v[0] for v in cache.values()], dtype=np.float64)
+        embeddings = np.array([v[1] for v in cache.values()], dtype=np.float32)
+        np.savez(FEATURES_CACHE_PATH, paths=paths, mtimes=mtimes, embeddings=embeddings)
+        print(f"Saved features cache with {len(cache)} entries.")
+    except Exception as e:
+        print(f"Error saving features cache: {e}")
 
 def load_classifier_and_centroids():
-    global centroids, classes_list, classifier_weights, classifier_biases, classifier_classes
+    global centroids, classes_list, classifier_weights, classifier_biases, classifier_classes, centroids_matrix_cached
+    t_start = time.time()
     try:
+        # Reset cached matrix on reload
+        centroids_matrix_cached = None
+        
         # Load centroids
+        t_cen = time.time()
         centroids_path = os.path.join(os.path.dirname(__file__), 'web_model', 'centroids.json')
         if os.path.exists(centroids_path):
-            print(f"Loading prototypical class centroids from {centroids_path}")
+            print(f"[Profiling] Loading centroids from {centroids_path}...")
             with open(centroids_path, 'r', encoding='utf-8') as f:
                 centroids_data = json.load(f)
                 classes_list = centroids_data.get('classes', [])
                 centroids = {k: np.array(v, dtype=np.float32) for k, v in centroids_data.get('centroids', {}).items()}
-                print(f"Loaded {len(centroids)} class centroids.")
+                print(f"[Profiling] Centroids loaded: {len(centroids)} classes in {time.time() - t_cen:.4f}s")
                 
         # Load Dense classifier
         # Try high-performance binary classifier first
         bin_path = os.path.join(os.path.dirname(__file__), 'web_model', 'classifier.bin')
         labels_path = os.path.join(os.path.dirname(__file__), 'web_model', 'labels.json')
         if os.path.exists(bin_path) and os.path.exists(labels_path):
-            print(f"Loading binary classifier weights from {bin_path}")
+            t_bin = time.time()
+            print(f"[Profiling] Loading binary classifier weights from {bin_path}...")
             with open(labels_path, 'r', encoding='utf-8') as f:
                 classifier_classes = json.load(f)
             num_classes = len(classifier_classes)
@@ -595,21 +632,24 @@ def load_classifier_and_centroids():
             if len(flat) == expected_len:
                 classifier_weights = flat[:1280 * num_classes].reshape((1280, num_classes))
                 classifier_biases = flat[1280 * num_classes:]
-                print(f"Loaded binary classifier with {num_classes} classes successfully.")
+                print(f"[Profiling] Loaded binary classifier with {num_classes} classes successfully in {time.time() - t_bin:.4f}s")
+                print(f"[Profiling] Total model load time: {time.time() - t_start:.4f}s")
                 return
             else:
-                print(f"Warning: Binary file length ({len(flat)}) does not match expected size ({expected_len}). Falling back to JSON.")
+                print(f"[Profiling] Warning: Binary file length ({len(flat)}) does not match expected size ({expected_len}). Falling back to JSON.")
 
         # Fallback to JSON
         classifier_path = os.path.join(os.path.dirname(__file__), 'web_model', 'classifier.json')
         if os.path.exists(classifier_path):
-            print(f"Loading Dense Softmax classifier from {classifier_path}")
+            t_json = time.time()
+            print(f"[Profiling] Loading Dense Softmax classifier from {classifier_path}...")
             with open(classifier_path, 'r', encoding='utf-8') as f:
                 clf_data = json.load(f)
                 classifier_classes = clf_data.get('classes', [])
                 classifier_weights = np.array(clf_data.get('weights'), dtype=np.float32)
                 classifier_biases = np.array(clf_data.get('biases'), dtype=np.float32)
-                print(f"Loaded Dense Classifier with {len(classifier_classes)} classes.")
+                print(f"[Profiling] Loaded Dense Classifier with {len(classifier_classes)} classes successfully in {time.time() - t_json:.4f}s")
+        print(f"[Profiling] Total model load time: {time.time() - t_start:.4f}s")
     except Exception as err:
         print(f"Error loading classifier and centroids: {err}")
 
@@ -678,25 +718,25 @@ def get_image_colorfulness(img_bgr):
         return 0.0
 
 def classify_crop(img_bgr):
+    t_start = time.time()
     try:
         if feature_model is None:
             return 'unknown', 0.0
             
-        # 0. Reject dull background noise using the colorfulness metric (bypassed in favor of centroid gating + unknown class)
-        # colorfulness = get_image_colorfulness(img_bgr)
-        # if colorfulness < 15.0:
-        #     print(f"Crop rejected due to low colorfulness ({colorfulness:.2f} < 15.0)")
-        #     return 'unknown', 0.0
-            
+        t_prep = time.time()
         # Convert BGR to RGB (MobileNetV2 expects RGB inputs)
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         img_resized = cv2.resize(img_rgb, (224, 224))
         x = np.expand_dims(img_resized.astype(np.float32), axis=0)
         x = (x / 127.5) - 1.0  # Normalized to [-1, 1] for MobileNetV2
+        prep_time = time.time() - t_prep
         
-        # Extract features (use direct call for 10x faster single-image inference than predict())
-        with model_lock:
-            features = feature_model(x, training=False).numpy()[0]
+        # Extract features (remove model_lock for thread-safe concurrent inference)
+        t_feat = time.time()
+        features = feature_model(x, training=False).numpy()[0]
+        feat_time = time.time() - t_feat
+        print(f"[Profiling] [Feature Extraction] MobileNetV2 extraction took {feat_time:.4f}s (prep: {prep_time:.4f}s)")
+        
         norm = np.linalg.norm(features)
         if norm > 0:
             features_norm = features / norm
@@ -705,41 +745,66 @@ def classify_crop(img_bgr):
             
         # Fallback to centroid similarity if classifier weights are not loaded
         if classifier_weights is None or classifier_biases is None:
-            if not centroids:
+            if not centroids or not classes_list:
                 return 'unknown', 0.0
-            best_class = 'unknown'
-            best_sim = -999.0
-            for cls, centroid in centroids.items():
-                sim = float(np.dot(features_norm, centroid))
-                if sim > best_sim:
-                    best_sim = sim
-                    best_class = cls
+            
+            t_search = time.time()
+            # Vectorize centroid search to avoid Python O(N) loop
+            global centroids_matrix_cached
+            if 'centroids_matrix_cached' not in globals() or centroids_matrix_cached is None or centroids_matrix_cached.shape[0] != len(classes_list):
+                centroids_matrix_cached = np.stack([centroids[cls] for cls in classes_list], axis=0)
+            
+            sims = np.dot(centroids_matrix_cached, features_norm)
+            top_idx = int(np.argmax(sims))
+            best_class = classes_list[top_idx]
+            best_sim = float(sims[top_idx])
+            search_time = time.time() - t_search
+            print(f"[Profiling] [Embedding Search] Vectorized fallback search took {search_time:.4f}s")
+            
             if best_class == 'unknown' or best_sim < 0.50:
                 return 'unknown', 0.0
             # Sim threshold mapping
             calibrated_conf = 0.80 + (best_sim - 0.50) * (0.20 / 0.50)
             calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
+            print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {best_class}, Conf: {calibrated_conf:.4f})")
             return best_class, calibrated_conf
 
         # 1. Compute logits: features_norm * W + b (raw similarities)
+        t_search = time.time()
         logits = np.dot(features_norm, classifier_weights) + classifier_biases
         
         # 2. Get top predicted class and similarity
         top_idx = int(np.argmax(logits))
         pred_class = classifier_classes[top_idx]
         similarity = float(logits[top_idx])
+        search_time = time.time() - t_search
+        print(f"[Profiling] [Embedding Search] Dense weights search took {search_time:.4f}s")
         
-        # 3. Reject if similarity is < 0.50 or if class is unknown
-        if pred_class == 'unknown' or similarity < 0.50:
-            return 'unknown', 0.0
+        # 3. Calibrate confidence
+        is_prototypical = np.all(classifier_biases == 0)
+        if is_prototypical:
+            if pred_class == 'unknown' or similarity < 0.50:
+                return 'unknown', 0.0
+            calibrated_conf = 0.80 + (similarity - 0.50) * (0.20 / 0.50)
+            calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
+            print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {pred_class}, Conf: {calibrated_conf:.4f})")
+            return pred_class, calibrated_conf
+        else:
+            exp_logits = np.exp(logits - np.max(logits))
+            probs = exp_logits / np.sum(exp_logits)
+            prob = float(probs[top_idx])
+            if pred_class == 'unknown' or prob < 0.50:
+                return 'unknown', 0.0
+            print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {pred_class}, Conf: {prob:.4f})")
+            return pred_class, prob
             
-        return pred_class, similarity
     except Exception as e:
         print(f"Crop classification failed: {e}")
         return 'unknown', 0.0
 
 @app.route('/api/ai/detect', methods=['POST'])
 def api_ai_detect():
+    t_start = time.time()
     try:
         # Support both JSON/base64 payload and raw binary image upload for high performance
         if request.content_type == 'application/json':
@@ -783,6 +848,7 @@ def api_ai_detect():
         sx = (cw - size_w) // 2
         center_crop = enhanced_img[sy:sy+size_h, sx:sx+size_w]
         
+        print(f"[Profiling] [Prediction Generation] Starting classification for center crop...")
         class1, conf1 = classify_crop(center_crop)
         
         # Optimization: If center crop yields a confident match (>= 0.80), skip full image inference to save CPU
@@ -793,6 +859,7 @@ def api_ai_detect():
                 "confidence": conf1
             })
         else:
+            print(f"[Profiling] [Prediction Generation] Center crop confidence low ({conf1:.4f}). Starting classification for full frame...")
             class2, conf2 = classify_crop(enhanced_img)
             if class1 != 'unknown' and class2 != 'unknown':
                 if conf1 >= conf2:
@@ -832,6 +899,7 @@ def api_ai_detect():
                     
         # Save verification record if needed
         if needs_verification or len(detections) == 0:
+            t_db = time.time()
             img_uuid = str(uuid.uuid4())
             filename = f"verify_{img_uuid}.jpg"
             assets_dir = os.path.join(app.static_folder, 'assets')
@@ -846,7 +914,9 @@ def api_ai_detect():
                 "is_verified": False,
                 "created_at": datetime.utcnow().isoformat() + "Z"
             })
+            print(f"[Profiling] [Database Query] Inserted verification log in {time.time() - t_db:.4f}s")
             
+        print(f"[Profiling] Total detection request took {time.time() - t_start:.4f}s")
         return jsonify({
             "detections": detections,
             "needs_verification": needs_verification
@@ -966,8 +1036,13 @@ def run_retrain_thread():
         class_names = sorted([
             d for d in os.listdir(dataset_dir)
             if os.path.isdir(os.path.join(dataset_dir, d))
+            and not d.startswith('temp_') # Ignore temp_ directories from crawler
         ])
         num_classes = len(class_names)
+        
+        # Load features cache
+        cache = load_features_cache()
+        new_cache = {}
         
         X_data = []
         y_data = []
@@ -985,20 +1060,40 @@ def run_retrain_thread():
                     and os.path.splitext(f)[1].lower() in ('.jpg','.jpeg','.png','.webp')
                 ]
                 
-                class_imgs = []
+                class_feats_list = []
+                uncached_imgs = []
+                uncached_paths = []
+                
                 for p in paths:
                     try:
-                        img = tf.keras.utils.load_img(p, target_size=img_size)
-                        x_arr = tf.keras.utils.img_to_array(img)
-                        class_imgs.append(x_arr)
-                    except Exception as img_err:
-                        print(f"Failed to load image {p}: {img_err}")
+                        mtime = os.path.getmtime(p)
+                    except Exception:
+                        mtime = 0.0
                         
-                if len(class_imgs) > 0:
+                    # Build relative path key
+                    rel_p = os.path.normpath(os.path.join(cls, os.path.basename(p))).replace('\\', '/')
+                    
+                    if rel_p in cache and abs(cache[rel_p][0] - mtime) < 120.0:
+                        # Cache hit!
+                        emb = cache[rel_p][1]
+                        class_feats_list.append(emb)
+                        new_cache[rel_p] = (mtime, emb)
+                    else:
+                        # Cache miss!
+                        try:
+                            img = tf.keras.utils.load_img(p, target_size=img_size)
+                            x_arr = tf.keras.utils.img_to_array(img)
+                            uncached_imgs.append(x_arr)
+                            uncached_paths.append((rel_p, mtime))
+                        except Exception as img_err:
+                            print(f"Failed to load image {p}: {img_err}")
+                
+                if len(uncached_imgs) > 0:
+                    print(f"Extracting features for {len(uncached_imgs)} uncached images in class '{cls}'...")
                     BATCH_SIZE = 32
                     arr_feats_list = []
-                    for i in range(0, len(class_imgs), BATCH_SIZE):
-                        chunk = class_imgs[i:i+BATCH_SIZE]
+                    for i in range(0, len(uncached_imgs), BATCH_SIZE):
+                        chunk = uncached_imgs[i:i+BATCH_SIZE]
                         x_batch = np.stack(chunk).astype(np.float32)
                         x_batch = (x_batch / 127.5) - 1.0
                         
@@ -1007,6 +1102,14 @@ def run_retrain_thread():
                         arr_feats_list.append(feats)
                         
                     arr_feats = np.concatenate(arr_feats_list, axis=0)
+                    
+                    for i, (rel_p, mtime) in enumerate(uncached_paths):
+                        emb = arr_feats[i]
+                        class_feats_list.append(emb)
+                        new_cache[rel_p] = (mtime, emb)
+                        
+                if len(class_feats_list) > 0:
+                    arr_feats = np.stack(class_feats_list)
                     
                     # Compute mean centroid (L2 normalized)
                     c = arr_feats.mean(axis=0)
@@ -1022,7 +1125,10 @@ def run_retrain_thread():
                     
                     X_data.append(arr_norm)
                     y_data.append(np.full((len(arr_norm),), idx, dtype=np.int32))
-            print(f"[Profiling] Feature extraction took {time.time() - t0:.4f}s")
+            
+            # Save updated cache back to disk
+            save_features_cache(new_cache)
+            print(f"[Profiling] Feature extraction (caching enabled) took {time.time() - t0:.4f}s")
                     
             if len(X_data) > 0:
                 X = np.concatenate(X_data, axis=0)
