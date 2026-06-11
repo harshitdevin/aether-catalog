@@ -2630,9 +2630,17 @@ async function initTFModel() {
     modelStatus.textContent = 'Initializing AI Scanner...';
     
     try {
-      await tf.setBackend('webgl');
+      // Set WASM paths to load binary modules directly from jsdelivr CDN
+      tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.17.0/dist/');
+      await tf.setBackend('wasm');
+      console.log('TF.js successfully using high-speed WASM backend (avoids WebGL green-screen virtual cam bugs)');
     } catch (e) {
-      console.warn('WebGL backend failed, using default:', e);
+      console.warn('WASM backend failed, falling back to CPU:', e);
+      try {
+        await tf.setBackend('cpu');
+      } catch (cpuErr) {
+        console.error('CPU backend fallback failed:', cpuErr);
+      }
     }
     
     // 1. Fetch labels first
