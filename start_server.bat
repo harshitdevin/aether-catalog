@@ -16,8 +16,8 @@ echo.
 echo Press Ctrl+C in this command window to terminate the server.
 echo =============================================================
 
-:: Open browser in background
-start http://localhost:8000
+:: Launch browser after a 10 second delay in the background to give backend ML libraries time to load
+start /b cmd /c "timeout /t 10 /nobreak >nul && start http://localhost:8000"
 
 :: Start Flask MongoDB server
 python server.py

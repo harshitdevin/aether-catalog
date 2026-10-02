@@ -5,7 +5,7 @@
   <style>
     body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 20px; }
     button { padding: 10px 20px; margin: 5px; background: #06b6d4; color: #000; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
-    video { width: 320px; height: 240px; border: 2px solid #06b6d4; border-radius: 8px; display: block; margin: 10px 0; }
+    video { width: 320px; height: 240px; border: 2px solid #06b6d4; border-radius: 8px; display: block; margin: 10px 0; transform: scaleX(-1); }
     #log { background: #1e293b; padding: 15px; border-radius: 8px; white-space: pre-wrap; min-height: 200px; max-height: 400px; overflow-y: auto; font-size: 13px; margin-top: 10px; }
     .ok { color: #4ade80; } .err { color: #f87171; } .info { color: #60a5fa; } .warn { color: #fbbf24; }
   </style>
@@ -18,6 +18,7 @@
   <h2>🔬 TF.js Model Diagnostic</h2>
   <button onclick="runDiagnostic()">▶ Run Full Diagnostic</button>
   <button onclick="startCamera()">📷 Start Camera</button>
+  <select id="camera-select" style="padding: 10px; margin: 5px; background: #1e293b; color: #fff; border: 1px solid #06b6d4; border-radius: 6px;"></select>
   <button onclick="captureAndPredict()">🎯 Capture & Predict</button>
   <button id="btn-auto" onclick="toggleAutoCapture()">🔄 Start Auto-Predict</button>
   <video id="vid" autoplay playsinline muted></video>
@@ -187,10 +188,64 @@
       log('\n✅ Diagnostic complete. Start camera and click Capture & Predict for real test.', 'ok');
     }
 
-    async function startCamera() {
+    async function loadCameraDevices() {
+      const select = document.getElementById('camera-select');
+      select.innerHTML = '<option value="">Loading cameras...</option>';
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
-        document.getElementById('vid').srcObject = stream;
+        let devices = await navigator.mediaDevices.enumerateDevices();
+        let videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length > 0 && !videoDevices[0].label) {
+          try {
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            tempStream.getTracks().forEach(track => track.stop());
+            devices = await navigator.mediaDevices.enumerateDevices();
+            videoDevices = devices.filter(device => device.kind === 'videoinput');
+          } catch (e) {
+            console.warn('Temporary stream request failed:', e);
+          }
+        }
+        
+        select.innerHTML = '';
+        videoDevices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${select.length + 1}`;
+          select.appendChild(option);
+        });
+        
+        if (videoDevices.length === 0) {
+          select.innerHTML = '<option value="">No cameras found</option>';
+        }
+      } catch (e) {
+        select.innerHTML = '<option value="">Error loading cameras</option>';
+        console.error('enumerateDevices error:', e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadCameraDevices);
+
+    async function startCamera() {
+      const select = document.getElementById('camera-select');
+      const deviceId = select.value;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      try {
+        const constraints = deviceId ? { video: { deviceId: { exact: deviceId }, width: 640, height: 480 }, audio: false } : { video: { width: 640, height: 480 }, audio: false };
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (constraintsErr) {
+          console.warn('Standard webcam constraints failed, trying basic fallback:', constraintsErr);
+          const fallbackConstraints = deviceId ? { video: { deviceId: { exact: deviceId } }, audio: false } : { video: true, audio: false };
+          stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+        }
+        const vid = document.getElementById('vid');
+        vid.srcObject = stream;
+        vid.play().catch(playErr => {
+          console.warn('Failed to call vid.play():', playErr);
+        });
         log('\n📷 Camera started', 'ok');
       } catch(e) {
         log(`\n❌ Camera error: ${e.message}`, 'err');
@@ -227,19 +282,39 @@
           
           // Cosine similarity
           const cosineSim = tf.matMul(normalized, weightsTensor);
-          // Temperature scaling (scale = 15.0) to calibrate softmax
-          const scaledLogits = tf.mul(cosineSim, tf.scalar(15.0));
-          const biased = tf.add(scaledLogits, biasesTensor);
-          
           tSearch = performance.now() - t1;
-          return tf.softmax(biased);
+          return cosineSim;
         });
         const probabilities = await probsTensor.data();
         probsTensor.dispose();
 
         const matches = [];
-        for (let i = 0; i < probabilities.length; i++) {
-          matches.push({ name: labels[i], prob: probabilities[i] });
+        const biasSumData = await biasesTensor.sum().data();
+        const isPrototypical = biasSumData[0] === 0;
+        
+        let finalScores;
+        if (isPrototypical) {
+          finalScores = Array.from(probabilities).map((score, i) => {
+            const clsName = labels[i];
+            const thresh = clsName === 'unknown' ? 0.40 : 0.60;
+            if (score < thresh) return 0.0;
+            let calibrated = 0.80 + (score - thresh) * (0.20 / (1.0 - thresh));
+            return Math.min(1.0, Math.max(0.80, calibrated));
+          });
+        } else {
+          // Non-prototypical fallback: apply Softmax
+          const softTensor = tf.tidy(() => {
+            const scaled = tf.mul(tf.tensor1d(probabilities), tf.scalar(15.0));
+            const biased = tf.add(scaled, biasesTensor);
+            return tf.softmax(biased);
+          });
+          const softData = await softTensor.data();
+          softTensor.dispose();
+          finalScores = Array.from(softData);
+        }
+
+        for (let i = 0; i < finalScores.length; i++) {
+          matches.push({ name: labels[i], prob: finalScores[i] });
         }
         matches.sort((a,b) => b.prob - a.prob);
 
@@ -252,10 +327,10 @@
         });
 
         const top = matches[0];
-        if (top.name !== 'unknown' && top.prob >= 0.55) {
+        if (top.name !== 'unknown' && top.prob >= 0.60) {
           log(`\n  ✅ ACCEPTED: "${top.name}" (${(top.prob*100).toFixed(1)}%)`, 'ok');
         } else {
-          log(`\n  ⚠️ TOO LOW CONFIDENCE OR UNKNOWN: ${(top.prob*100).toFixed(1)}% (Threshold: 55%)`, 'warn');
+          log(`\n  ⚠️ TOO LOW CONFIDENCE OR UNKNOWN: ${(top.prob*100).toFixed(1)}% (Threshold: 60%)`, 'warn');
           log(`     Will be added as "Unknown Product"`, 'warn');
         }
       } catch(e) {

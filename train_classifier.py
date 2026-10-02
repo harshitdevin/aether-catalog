@@ -16,8 +16,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 import tensorflow as tf
 
-DATASET_DIR = './dataset'
-OUTPUT_FILE = './web_model/classifier.json'
+DATASET_DIR = os.path.abspath('./dataset')
+OUTPUT_FILE = os.path.abspath('./web_model/classifier.json')
 IMG_SIZE    = (224, 224)
 BATCH       = 16
 
@@ -110,7 +110,7 @@ def main():
     history = clf.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=80,
+        epochs=200,
         batch_size=32,
         verbose=1
     )
@@ -126,7 +126,7 @@ def main():
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
-    final_clf.fit(X, y, epochs=60, batch_size=32, verbose=0)
+    final_clf.fit(X, y, epochs=150, batch_size=32, verbose=0)
     
     # Evaluate final model
     loss, acc = final_clf.evaluate(X, y, verbose=0)

@@ -56,11 +56,13 @@ def main():
 
     for idx, cls in enumerate(class_names):
         cls_dir = os.path.join(DATASET_DIR, cls)
-        paths = [
+        all_paths = [
             os.path.join(cls_dir, f) for f in os.listdir(cls_dir)
             if os.path.isfile(os.path.join(cls_dir, f))
             and os.path.splitext(f)[1].lower() in ('.jpg','.jpeg','.png','.webp')
         ]
+        real_paths = [p for p in all_paths if not os.path.basename(p).startswith('synth_img_')]
+        paths = real_paths if len(real_paths) > 0 else all_paths
         if not paths:
             print(f"  [{idx+1}/{num_classes}] {cls}: NO images - zero vector")
             continue
@@ -135,8 +137,11 @@ def main():
         if os.path.exists(OUTPUT_DIR):
             shutil.rmtree(OUTPUT_DIR)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        tfjs.converters.save_keras_model(model, OUTPUT_DIR)
-        print("    tfjs Python API export done.")
+        try:
+            tfjs.converters.save_keras_model(model, OUTPUT_DIR)
+            print("    tfjs Python API export done.")
+        except Exception as api_err:
+            print(f"    tfjs Python API export warning: {api_err}")
 
     # Check output
     if os.path.exists(OUTPUT_DIR):

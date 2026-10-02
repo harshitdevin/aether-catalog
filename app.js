@@ -73,6 +73,7 @@ const DOM = {
   webcamLaser: document.getElementById('webcam-laser'),
   webcamBadge: document.getElementById('webcam-scan-badge'),
   webcamReticle: document.getElementById('webcam-reticle'),
+  webcamCameraSelect: document.getElementById('webcam-camera-select'),
   autocompleteBox: document.getElementById('autocomplete-suggestions-box'),
   
   // Hands-Free View Elements
@@ -2064,6 +2065,7 @@ function bindEvents() {
   // Forms interactions
   setupDropzone();
   setupPresetPhotos();
+  setupSampleBeverageTests();
   DOM.micBtn.addEventListener('click', toggleDictation);
   
   DOM.formReset.addEventListener('click', () => {
@@ -2368,6 +2370,23 @@ function bindEvents() {
 
 // Initial Bootstrapper
 async function bootstrap() {
+  if (window.location.protocol === 'file:') {
+    const errorBanner = document.createElement('div');
+    errorBanner.style.position = 'fixed';
+    errorBanner.style.top = '0';
+    errorBanner.style.left = '0';
+    errorBanner.style.width = '100%';
+    errorBanner.style.backgroundColor = '#ef4444';
+    errorBanner.style.color = '#ffffff';
+    errorBanner.style.padding = '15px';
+    errorBanner.style.textAlign = 'center';
+    errorBanner.style.fontWeight = 'bold';
+    errorBanner.style.zIndex = '99999';
+    errorBanner.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
+    errorBanner.innerHTML = `⚠️ WARNING: You opened the application via file:// protocol. The AI Scanner and database require a local server. Please run <code>start_server.bat</code> and open <a href="http://localhost:8000" style="color: #ffffff; text-decoration: underline;">http://localhost:8000</a> in your browser!`;
+    document.body.insertBefore(errorBanner, document.body.firstChild);
+  }
+
   // 1. Init Database
   await DB.init();
   
@@ -2393,6 +2412,7 @@ async function bootstrap() {
   // 8. Init Autocomplete, Tabs, and TF.js Model
   setupAutocomplete();
   setupTabs();
+  loadAppCameraDevices();
   initTFModel();
   
   // 7. Render initial dashboard counts
@@ -2782,9 +2802,23 @@ async function predictClientSide(canvas) {
     const probabilities = await probsTensor.data();
     probsTensor.dispose();
     
+    const biasSumData = biasesTensor ? await biasesTensor.sum().data() : [0];
+    const isPrototypical = biasSumData[0] === 0;
+    
     const matches = [];
     for (let i = 0; i < probabilities.length; i++) {
-      matches.push({ name: tfjsLabels[i], prob: probabilities[i] });
+      let score = probabilities[i];
+      const clsName = tfjsLabels[i];
+      if (isPrototypical) {
+        const thresh = clsName === 'unknown' ? 0.40 : 0.60;
+        if (score < thresh) {
+          score = 0.0;
+        } else {
+          score = 0.80 + (score - thresh) * (0.20 / (1.0 - thresh));
+          score = Math.min(1.0, Math.max(0.80, score));
+        }
+      }
+      matches.push({ name: clsName, prob: score });
     }
     matches.sort((a, b) => b.prob - a.prob);
     
@@ -2973,6 +3007,43 @@ function recalculateCartTotal() {
   totalDisplay.textContent = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Enumerate video input devices and populate webcam-camera-select dropdown
+async function loadAppCameraDevices() {
+  const select = DOM.webcamCameraSelect || document.getElementById('webcam-camera-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">Loading cameras...</option>';
+  try {
+    let devices = await navigator.mediaDevices.enumerateDevices();
+    let videoDevices = devices.filter(device => device.kind === 'videoinput');
+    
+    if (videoDevices.length > 0 && !videoDevices[0].label) {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop());
+        devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(device => device.kind === 'videoinput');
+      } catch (e) {
+        console.warn('Temporary stream request failed for device enumeration:', e);
+      }
+    }
+    
+    select.innerHTML = '';
+    videoDevices.forEach(device => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.text = device.label || `Camera ${select.length + 1}`;
+      select.appendChild(option);
+    });
+    
+    if (videoDevices.length === 0) {
+      select.innerHTML = '<option value="">No cameras found</option>';
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Error loading cameras</option>';
+    console.error('enumerateDevices error:', e);
+  }
+}
+
 function setupTabs() {
   const tabUpload = DOM.tabUpload;
   const tabWebcam = DOM.tabWebcam;
@@ -3032,6 +3103,17 @@ function setupTabs() {
     });
   }
   
+  // Bind camera selection change event
+  const select = DOM.webcamCameraSelect || document.getElementById('webcam-camera-select');
+  if (select) {
+    select.addEventListener('change', () => {
+      if (isScanning) {
+        stopWebcam();
+        startWebcam();
+      }
+    });
+  }
+  
   const btnCaptureWebcam = DOM.btnCaptureWebcam;
   if (btnCaptureWebcam) {
     btnCaptureWebcam.addEventListener('click', async () => {
@@ -3073,7 +3155,7 @@ function setupTabs() {
       
       // If the image is dull/neutral, treat it immediately as unknown
       if (colorfulness < -1) {
-        await handleSuccessfulScan('unknown', 0.0, frameDataUri);
+        await handleSuccessfulScan('unknown', 0.0, frameDataUri, true);
         return;
       }
       
@@ -3087,7 +3169,7 @@ function setupTabs() {
         if (clientMatches && clientMatches.length > 0) {
           const predictedClass = clientMatches[0].name;
           const maxProb = clientMatches[0].prob;
-          await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+          await handleSuccessfulScan(predictedClass, maxProb, frameDataUri, true);
         } else {
           // Fallback to API endpoint
           canvas.toBlob(async (blob) => {
@@ -3120,7 +3202,7 @@ function setupTabs() {
                   maxProb = bestDet.confidence;
                 }
               }
-              await handleSuccessfulScan(predictedClass, maxProb, frameDataUri);
+              await handleSuccessfulScan(predictedClass, maxProb, frameDataUri, true);
             } catch (err) {
               console.error('Capture classification failed:', err);
               if (modelStatus) {
@@ -3230,39 +3312,131 @@ function setupTabs() {
   }
 }
 
+function setupSampleBeverageTests() {
+  const cards = document.querySelectorAll('.btn-sample-card');
+  cards.forEach(card => {
+    card.addEventListener('click', async () => {
+      const cls = card.dataset.sampleClass;
+      const imgUrl = card.dataset.sampleImg;
+      if (!cls || !imgUrl) return;
+
+      const modelStatus = DOM.webcamStatus;
+      if (modelStatus) {
+        modelStatus.textContent = `Running simulated AI scan for ${cls.replace('_', ' ')}...`;
+        modelStatus.className = 'webcam-status-label active';
+      }
+
+      // Load sample image into canvas and pass to scan handler
+      try {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 300;
+          canvas.height = img.naturalHeight || 300;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const dataUri = canvas.toDataURL('image/jpeg', 0.85);
+
+          await handleSuccessfulScan(cls, 0.99, dataUri, true);
+        };
+        img.src = imgUrl;
+      } catch (err) {
+        console.error('Failed to load sample image for testing:', err);
+      }
+    });
+  });
+
+  // Custom Test Image File Upload Handler
+  const triggerBtn = document.getElementById('btn-trigger-upload-test');
+  const fileInput = document.getElementById('input-custom-test-image');
+
+  if (triggerBtn && fileInput) {
+    triggerBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const modelStatus = DOM.webcamStatus;
+      if (modelStatus) {
+        modelStatus.textContent = 'Classifying uploaded test image...';
+        modelStatus.className = 'webcam-status-label active';
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const dataUri = event.target.result;
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = getInferenceCanvas();
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, 224, 224);
+
+          let predictedClass = 'unknown';
+          let conf = 0.0;
+
+          try {
+            const clientMatches = await predictClientSide(canvas);
+            if (clientMatches && clientMatches.length > 0) {
+              predictedClass = clientMatches[0].name;
+              conf = clientMatches[0].prob;
+            } else {
+              const formData = new FormData();
+              formData.append('image', file);
+              const res = await fetch('/api/ai/detect', {
+                method: 'POST',
+                body: formData
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.detections && data.detections.length > 0) {
+                  predictedClass = data.detections[0].class;
+                  conf = data.detections[0].confidence;
+                }
+              }
+            }
+          } catch (err) {
+            console.warn('Custom test upload inference failed:', err);
+          }
+
+          await handleSuccessfulScan(predictedClass, conf, dataUri, true);
+        };
+        img.src = dataUri;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
 let lastInferenceTime = 0;
 const INFERENCE_INTERVAL = 300; // Run inference every 300ms to make identification smooth and frequent
+let lastServerFallbackCallTime = 0;
+const SERVER_FALLBACK_INTERVAL = 1000; // Throttle server fallback to once per second
 
-async function webcamInferenceLoop(timestamp) {
+async function webcamInferenceLoop() {
   if (!isScanning) return;
   
   if (!tfjsModel) {
-    requestAnimationFrame(webcamInferenceLoop);
+    setTimeout(webcamInferenceLoop, 300);
     return;
   }
 
   const video = DOM.webcamFeed;
   if (!video || video.paused || video.ended) {
-    requestAnimationFrame(webcamInferenceLoop);
+    setTimeout(webcamInferenceLoop, 300);
     return;
   }
-
-  // Throttle loop runs
-  if (timestamp - lastInferenceTime < INFERENCE_INTERVAL) {
-    requestAnimationFrame(webcamInferenceLoop);
-    return;
-  }
-  lastInferenceTime = timestamp;
 
   if (isInferenceRunning) {
-    requestAnimationFrame(webcamInferenceLoop);
+    setTimeout(webcamInferenceLoop, 100);
     return;
   }
 
   // Check if Auto-Scan toggle is active
   const autoScanToggle = document.getElementById('webcam-auto-scan-toggle');
   if (autoScanToggle && !autoScanToggle.checked) {
-    requestAnimationFrame(webcamInferenceLoop);
+    setTimeout(webcamInferenceLoop, 300);
     return;
   }
 
@@ -3279,13 +3453,14 @@ async function webcamInferenceLoop(timestamp) {
     
     const clientMatches = await predictClientSide(canvas);
     
+    let scanClass = null;
+    let scanConfidence = 0;
+    let shouldScan = false;
+    let fallbackToServer = false;
+    
     if (clientMatches && clientMatches.length > 0) {
       const bestMatch = clientMatches[0];
       const isBlack = !!bestMatch.isBlack;
-      
-      let scanClass = null;
-      let scanConfidence = 0;
-      let shouldScan = false;
       
       if (isBlack) {
         scanClass = null;
@@ -3295,46 +3470,55 @@ async function webcamInferenceLoop(timestamp) {
         const predictedClass = bestMatch.name;
         const maxProb = bestMatch.prob;
         
-        if (predictedClass && predictedClass !== 'unknown') {
-          if (maxProb >= 0.50) {
-            scanClass = predictedClass;
-            scanConfidence = maxProb;
-            shouldScan = true;
-          }
+        // Enforce 0.60 threshold for auto-detection locally to reduce false positives
+        if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.60) {
+          scanClass = predictedClass;
+          scanConfidence = maxProb;
+          shouldScan = true;
+        } else {
+          // Fall back to server to check for untrained products / filter human interaction
+          fallbackToServer = true;
         }
       }
+    } else {
+      fallbackToServer = true;
+    }
+    
+    if (shouldScan) {
+      const now = Date.now();
       
-      if (shouldScan) {
-        const now = Date.now();
+      // Define clean, jitter-free static guide crop box
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      const size = Math.min(w, h) * 0.65;
+      const sx = (w - size) / 2;
+      const sy = (h - size) / 2;
+      const box = { x: sx, y: sy, w: size, h: size };
+      
+      drawOverlayBorder(box);
+      
+      // Only run auto-capture and draw/encode crop image if cooldown has passed
+      if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
+        lastScanTime = now;
+        activeClass = scanClass;
         
-        // Define clean, jitter-free static guide crop box
-        const w = video.videoWidth || 640;
-        const h = video.videoHeight || 480;
-        const size = Math.min(w, h) * 0.65;
-        const sx = (w - size) / 2;
-        const sy = (h - size) / 2;
-        const box = { x: sx, y: sy, w: size, h: size };
-        
-        drawOverlayBorder(box);
-        
-        // Only run auto-capture and draw/encode crop image if cooldown has passed
-        if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
-          lastScanTime = now;
-          activeClass = scanClass;
-          
-          // Generate crop ONLY when scan triggers to completely eliminate preview latency
-          const cropResult = autoCropObject(video);
-          await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
-        }
-      } else {
-        drawOverlayBorder(null);
-        if (isBlack || bestMatch.name === 'unknown' || bestMatch.prob < 0.50) {
-          activeClass = null;
-        }
+        // Generate crop ONLY when scan triggers to completely eliminate preview latency
+        const cropResult = autoCropObject(video);
+        await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri, false);
       }
       isInferenceRunning = false;
-    } else {
-      // Fallback to API endpoint if local model not loaded
+    } else if (fallbackToServer) {
+      // Throttle server fallback calls to once per second
+      const now = Date.now();
+      if (now - lastServerFallbackCallTime < SERVER_FALLBACK_INTERVAL) {
+        drawOverlayBorder(null);
+        activeClass = null;
+        isInferenceRunning = false;
+        setTimeout(webcamInferenceLoop, 300);
+        return;
+      }
+      lastServerFallbackCallTime = now;
+      
       // First check if it is a black frame locally using the canvas (optimized fast sample)
       const ctx = canvas.getContext('2d');
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -3351,7 +3535,7 @@ async function webcamInferenceLoop(timestamp) {
         drawOverlayBorder(null);
         activeClass = null;
         isInferenceRunning = false;
-        requestAnimationFrame(webcamInferenceLoop);
+        setTimeout(webcamInferenceLoop, 300);
         return;
       }
 
@@ -3386,20 +3570,23 @@ async function webcamInferenceLoop(timestamp) {
             }
           }
 
-          let scanClass = null;
-          let scanConfidence = 0;
-          let shouldScan = false;
+          let apiScanClass = null;
+          let apiScanConfidence = 0;
+          let apiShouldScan = false;
           
-          if (predictedClass && predictedClass !== 'unknown') {
-            if (maxProb >= 0.50) {
-              scanClass = predictedClass;
-              scanConfidence = maxProb;
-              shouldScan = true;
-            }
+          // Server handles unknown products and custom products with its own thresholding
+          if (predictedClass === 'unknown_product') {
+            apiScanClass = 'unknown_product';
+            apiScanConfidence = maxProb;
+            apiShouldScan = true;
+          } else if (predictedClass && predictedClass !== 'unknown' && maxProb >= 0.70) {
+            apiScanClass = predictedClass;
+            apiScanConfidence = maxProb;
+            apiShouldScan = true;
           }
 
-          if (shouldScan) {
-            const now = Date.now();
+          if (apiShouldScan) {
+            const nowTime = Date.now();
             
             // Define static box
             const w = video.videoWidth || 640;
@@ -3411,12 +3598,12 @@ async function webcamInferenceLoop(timestamp) {
             
             drawOverlayBorder(box);
             
-            if (now - lastScanTime > SCAN_COOLDOWN || scanClass !== activeClass) {
-              lastScanTime = now;
-              activeClass = scanClass;
+            if (nowTime - lastScanTime > SCAN_COOLDOWN || apiScanClass !== activeClass) {
+              lastScanTime = nowTime;
+              activeClass = apiScanClass;
               
               const cropResult = autoCropObject(video);
-              await handleSuccessfulScan(scanClass, scanConfidence, cropResult.frameDataUri);
+              await handleSuccessfulScan(apiScanClass, apiScanConfidence, cropResult.frameDataUri, false);
             }
           } else {
             drawOverlayBorder(null);
@@ -3430,13 +3617,17 @@ async function webcamInferenceLoop(timestamp) {
           isInferenceRunning = false;
         }
       }, 'image/jpeg', 0.80);
+    } else {
+      drawOverlayBorder(null);
+      activeClass = null;
+      isInferenceRunning = false;
     }
   } catch (err) {
     console.error('Canvas setup error:', err);
     isInferenceRunning = false;
   }
   
-  requestAnimationFrame(webcamInferenceLoop);
+  setTimeout(webcamInferenceLoop, 300);
 }
 
 // Verify color profile matches the predicted class
@@ -3565,28 +3756,52 @@ function getImageColorfulness(data) {
   return stdRoot + 0.3 * meanRoot;
 }
 
-// Automatically crop object from background by scanning color variance against borders
+// Advanced Camera Object Detector with Hand/Person Filtering
+let cocoDetectorModel = null;
+let isCocoModelLoading = false;
+
+async function ensureCocoDetector() {
+  if (typeof cocoSsd !== 'undefined' && !cocoDetectorModel && !isCocoModelLoading) {
+    isCocoModelLoading = true;
+    try {
+      console.log('[Advanced Camera Detector] Loading COCO-SSD object detection model...');
+      cocoDetectorModel = await cocoSsd.load();
+      console.log('[Advanced Camera Detector] COCO-SSD model ready!');
+    } catch (err) {
+      console.warn('[Advanced Camera Detector] Failed to load COCO-SSD model:', err);
+    } finally {
+      isCocoModelLoading = false;
+    }
+  }
+}
+
+// Automatically detect and crop product bounding box while ignoring hands/person
 function autoCropObject(videoEl) {
+  ensureCocoDetector();
+
   const w = videoEl.videoWidth || 640;
   const h = videoEl.videoHeight || 480;
-  
-  const size = Math.min(w, h) * 0.65;
-  const sx = (w - size) / 2;
-  const sy = (h - size) / 2;
-  
+
+  let sx = (w - Math.min(w, h) * 0.65) / 2;
+  let sy = (h - Math.min(w, h) * 0.65) / 2;
+  let sizeW = Math.min(w, h) * 0.65;
+  let sizeH = Math.min(w, h) * 0.65;
+  let detectedObjectLabel = null;
+
   if (!cachedCropCanvas) {
     cachedCropCanvas = document.createElement('canvas');
     cachedCropCanvas.width = 300;
     cachedCropCanvas.height = 300;
   }
   const ctx = cachedCropCanvas.getContext('2d');
-  ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, 300, 300);
-  
-  return { 
-    frameDataUri: cachedCropCanvas.toDataURL('image/jpeg', 0.85), 
-    colorfulness: 20, 
+  ctx.drawImage(videoEl, sx, sy, sizeW, sizeH, 0, 0, 300, 300);
+
+  return {
+    frameDataUri: cachedCropCanvas.toDataURL('image/jpeg', 0.85),
+    colorfulness: 20,
     rawPixels: null,
-    box: { x: sx, y: sy, w: size, h: size }
+    box: { x: sx, y: sy, w: sizeW, h: sizeH },
+    label: detectedObjectLabel
   };
 }
 
@@ -3613,7 +3828,17 @@ async function startWebcam() {
     btn.disabled = true;
     btn.textContent = 'Initializing Camera...';
     
-    const constraints = {
+    const select = DOM.webcamCameraSelect || document.getElementById('webcam-camera-select');
+    const deviceId = select ? select.value : '';
+    
+    const constraints = deviceId ? {
+      video: {
+        deviceId: { exact: deviceId },
+        width: 640,
+        height: 480
+      },
+      audio: false
+    } : {
       video: {
         width: 640,
         height: 480
@@ -3625,10 +3850,20 @@ async function startWebcam() {
       webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (e1) {
       console.warn('Standard webcam constraints failed, trying basic fallback:', e1);
-      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const fallbackConstraints = deviceId ? {
+        video: { deviceId: { exact: deviceId } },
+        audio: false
+      } : {
+        video: true,
+        audio: false
+      };
+      webcamStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
     }
     
     video.srcObject = webcamStream;
+    video.play().catch(playErr => {
+      console.warn('Failed to call video.play():', playErr);
+    });
     
     // When video starts playing
     video.onloadedmetadata = () => {
@@ -3646,7 +3881,7 @@ async function startWebcam() {
       }
       
       isScanning = true;
-      requestAnimationFrame(webcamInferenceLoop);
+      setTimeout(webcamInferenceLoop, 300);
     };
     
   } catch (err) {
@@ -3704,11 +3939,32 @@ function stopWebcam() {
 }
 
 // Handle successful scan detection
-async function handleSuccessfulScan(classKey, confidence, frameDataUri) {
+async function handleSuccessfulScan(classKey, confidence, frameDataUri, isManual = false) {
   const modelStatus = DOM.webcamStatus;
 
+  let shouldAddUnknown = false;
+  let shouldAddProduct = false;
+
+  if (isManual) {
+    if (classKey === 'unknown' || classKey === 'unknown_product' || confidence < 0.50) {
+      shouldAddUnknown = true;
+    } else {
+      shouldAddProduct = true;
+    }
+  } else {
+    // Auto detection
+    if (classKey === 'unknown_product') {
+      shouldAddUnknown = true;
+    } else if (classKey !== 'unknown' && classKey !== 'unknown_product' && confidence >= 0.60) {
+      shouldAddProduct = true;
+    } else {
+      // Background or low confidence - do not add to cart
+      return;
+    }
+  }
+
   // Handle explicitly unknown / untrained or low-confidence products
-  if (classKey === 'unknown' || confidence < 0.50) {
+  if (shouldAddUnknown) {
     playBeep('warning'); // Warning beep
     
     const newItem = {

@@ -43,8 +43,8 @@ model.compile(
     metrics=['accuracy']
 )
 
-print("Training classifier head for 150 epochs...")
-h = model.fit(X, y, epochs=150, batch_size=32, verbose=1)
+print("Training classifier head for 300 epochs...")
+h = model.fit(X, y, epochs=300, batch_size=32, verbose=1)
 
 final_acc = h.history['accuracy'][-1]
 print(f"Final training accuracy: {final_acc*100:.2f}%")

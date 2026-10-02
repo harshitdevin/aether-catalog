@@ -2746,6 +2746,7 @@ body.role-staff .admin-only {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scaleX(-1); /* Mirror camera feed for natural interaction */
 }
 
 #webcam-overlay {
@@ -2756,6 +2757,7 @@ body.role-staff .admin-only {
   height: 100%;
   pointer-events: none;
   z-index: 3;
+  transform: scaleX(-1); /* Mirror overlay canvas to align with mirrored feed */
 }
 
 .webcam-placeholder {
@@ -3075,3 +3077,101 @@ body.role-staff .admin-only {
   text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
   letter-spacing: 1.5px;
 }
+
+/* Sample Beverage Test Grid Styling */
+.sample-beverage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.btn-sample-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+  padding: 8px 10px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sample-card:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+}
+
+.btn-sample-card:active {
+  transform: translateY(0);
+}
+
+.sample-card-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sample-card-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sample-card-title {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sample-card-meta {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sample-scan-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-accent);
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  padding: 2px 5px;
+  border-radius: 4px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.2s ease;
+}
+
+.btn-sample-card:hover .sample-scan-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.btn-outline-accent {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  transition: all 0.2s ease;
+}
+
+.btn-outline-accent:hover {
+  background: var(--color-accent);
+  color: #0f172a;
+}
+

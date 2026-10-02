@@ -75,7 +75,7 @@ def download_bigbasket_images(cls_name, prod_id, dest_dir):
         
     return downloaded
 
-def crawl_bing_images(cls_name, queries, dest_dir, max_images=30):
+def crawl_bing_images(cls_name, queries, dest_dir, max_images=80):
     print(f"  Crawling Bing images for {cls_name}...")
     from icrawler.builtin import BingImageCrawler
     
@@ -127,7 +127,7 @@ def gather_unknown_backgrounds():
         "empty shelf background",
         "human palm close up background"
     ]
-    crawled = crawl_bing_images("unknown", queries, unknown_dir, max_images=30)
+    crawled = crawl_bing_images("unknown", queries, unknown_dir, max_images=80)
     print(f"  Total Unknown background images: {len(os.listdir(unknown_dir))}")
 
 def main():

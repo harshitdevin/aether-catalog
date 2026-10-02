@@ -6,6 +6,14 @@ from pymongo import MongoClient
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
+@app.after_request
+def add_header(response):
+    if request.path.startswith('/web_model/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 class MockCollection:
     def __init__(self): self.data = {}
     def find(self, query=None):
@@ -761,10 +769,11 @@ def classify_crop(img_bgr):
             search_time = time.time() - t_search
             print(f"[Profiling] [Embedding Search] Vectorized fallback search took {search_time:.4f}s")
             
-            if best_class == 'unknown' or best_sim < 0.50:
+            thresh = 0.40 if best_class == 'unknown' else 0.60
+            if best_class == 'unknown' or best_sim < thresh:
                 return 'unknown', 0.0
             # Sim threshold mapping
-            calibrated_conf = 0.80 + (best_sim - 0.50) * (0.20 / 0.50)
+            calibrated_conf = 0.80 + (best_sim - thresh) * (0.20 / (1.0 - thresh))
             calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
             print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {best_class}, Conf: {calibrated_conf:.4f})")
             return best_class, calibrated_conf
@@ -783,9 +792,10 @@ def classify_crop(img_bgr):
         # 3. Calibrate confidence
         is_prototypical = np.all(classifier_biases == 0)
         if is_prototypical:
-            if pred_class == 'unknown' or similarity < 0.50:
+            thresh = 0.40 if pred_class == 'unknown' else 0.60
+            if pred_class == 'unknown' or similarity < thresh:
                 return 'unknown', 0.0
-            calibrated_conf = 0.80 + (similarity - 0.50) * (0.20 / 0.50)
+            calibrated_conf = 0.80 + (similarity - thresh) * (0.20 / (1.0 - thresh))
             calibrated_conf = min(1.0, max(0.80, float(calibrated_conf)))
             print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {pred_class}, Conf: {calibrated_conf:.4f})")
             return pred_class, calibrated_conf
@@ -793,7 +803,8 @@ def classify_crop(img_bgr):
             exp_logits = np.exp(logits - np.max(logits))
             probs = exp_logits / np.sum(exp_logits)
             prob = float(probs[top_idx])
-            if pred_class == 'unknown' or prob < 0.50:
+            thresh = 0.40 if pred_class == 'unknown' else 0.60
+            if pred_class == 'unknown' or prob < thresh:
                 return 'unknown', 0.0
             print(f"[Profiling] Classification complete in {time.time() - t_start:.4f}s (Class: {pred_class}, Conf: {prob:.4f})")
             return pred_class, prob
@@ -839,53 +850,121 @@ def api_ai_detect():
         h, w = enhanced_img.shape[:2]
         detections = []
         
-        # 1. Run direct dual-crop classification (Center 80% crop + Full frame)
+        # YOLO-based Human Masking & Ignore Human Interaction
+        has_person = False
+        person_boxes = []
+        has_product = False
+        product_conf = 0.0
+        if yolo_model is not None:
+            try:
+                # Run YOLOv8 on the enhanced image
+                yolo_results = yolo_model(enhanced_img, verbose=False)
+                for r in yolo_results:
+                    for box in r.boxes:
+                        cls_id = int(box.cls[0])
+                        conf = float(box.conf[0])
+                        # Pretrained COCO has class 0 as person.
+                        # We also check the class name for safety.
+                        is_person_class = False
+                        class_name = ""
+                        if hasattr(yolo_model, 'names') and cls_id in yolo_model.names:
+                            class_name = yolo_model.names[cls_id].lower()
+                            if 'person' in class_name or 'human' in class_name:
+                                is_person_class = True
+                        else:
+                            is_person_class = (cls_id == 0)
+                            
+                        if is_person_class and conf > 0.40:
+                            has_person = True
+                            bx = box.xyxy[0].tolist()
+                            person_boxes.append(bx)
+                        elif not is_person_class and conf > 0.35:
+                            # Filter out COCO classes that are vehicles, roads, furniture, structures
+                            is_ignored_coco = False
+                            for ignored in ['bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+                                            'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench',
+                                            'chair', 'couch', 'bed', 'dining table', 'toilet']:
+                                if ignored in class_name:
+                                    is_ignored_coco = True
+                                    break
+                            if not is_ignored_coco:
+                                has_product = True
+                                product_conf = max(product_conf, conf)
+            except Exception as yolo_err:
+                print(f"YOLO person/product detection failed in api_ai_detect: {yolo_err}")
+                
+        if has_person:
+            print(f"YOLO detected {len(person_boxes)} person(s) in frame. Masking human features to ignore interaction.")
+            for bx in person_boxes:
+                x1, y1, x2, y2 = map(int, bx)
+                x1 = max(0, x1)
+                y1 = max(0, y1)
+                x2 = min(w, x2)
+                y2 = min(h, y2)
+                
+                # Mask out the upper 65% of the person's bounding box (covers head, face, neck, and shoulders)
+                box_h = y2 - y1
+                mask_y2 = y1 + int(box_h * 0.65)
+                mask_y2 = min(y2, max(y1, mask_y2))
+                
+                # Draw a black rectangle over the person's upper body in enhanced_img
+                cv2.rectangle(enhanced_img, (x1, y1), (x2, mask_y2), (0, 0, 0), -1)
+
+        # 1. Run direct dual-crop classification (Center 80% crop + Full frame) on RAW image
         # Bypassing CPU-heavy YOLOv8 object detection to make capture instant and 10x-15x faster
-        ch, cw = enhanced_img.shape[:2]
+        ch, cw = img.shape[:2]
         size_h = int(ch * 0.80)
         size_w = int(cw * 0.80)
         sy = (ch - size_h) // 2
         sx = (cw - size_w) // 2
-        center_crop = enhanced_img[sy:sy+size_h, sx:sx+size_w]
+        center_crop = img[sy:sy+size_h, sx:sx+size_w]
         
-        print(f"[Profiling] [Prediction Generation] Starting classification for center crop...")
+        print(f"[Profiling] [Prediction Generation] Starting classification for center crop on raw image...")
         class1, conf1 = classify_crop(center_crop)
+        class2, conf2 = classify_crop(img)
         
-        # Optimization: If center crop yields a confident match (>= 0.80), skip full image inference to save CPU
-        if class1 != 'unknown' and conf1 >= 0.80:
+        best_class = 'unknown'
+        best_conf = 0.0
+        best_bbox = [0, 0, cw, ch]
+        
+        # Determine best detection from the dual-crop
+        if class1 != 'unknown' and class2 != 'unknown':
+            if conf1 >= conf2:
+                best_class = class1
+                best_conf = conf1
+                best_bbox = [sx, sy, sx+size_w, sy+size_h]
+            else:
+                best_class = class2
+                best_conf = conf2
+                best_bbox = [0, 0, cw, ch]
+        elif class2 != 'unknown':
+            best_class = class2
+            best_conf = conf2
+            best_bbox = [0, 0, cw, ch]
+        elif class1 != 'unknown':
+            best_class = class1
+            best_conf = conf1
+            best_bbox = [sx, sy, sx+size_w, sy+size_h]
+            
+        # Decision Logic: Apply thresholds to ignore backgrounds/human interaction and label untrained products
+        # Enforce confidence >= 0.60 for custom trained classes
+        if best_class != 'unknown' and best_conf >= 0.60:
             detections.append({
-                "bbox": [sx, sy, sx+size_w, sy+size_h],
-                "class": class1,
-                "confidence": conf1
+                "bbox": best_bbox,
+                "class": best_class,
+                "confidence": best_conf
             })
         else:
-            print(f"[Profiling] [Prediction Generation] Center crop confidence low ({conf1:.4f}). Starting classification for full frame...")
-            class2, conf2 = classify_crop(enhanced_img)
-            if class1 != 'unknown' and class2 != 'unknown':
-                if conf1 >= conf2:
-                    detections.append({
-                        "bbox": [sx, sy, sx+size_w, sy+size_h],
-                        "class": class1,
-                        "confidence": conf1
-                    })
-                else:
-                    detections.append({
-                        "bbox": [0, 0, cw, ch],
-                        "class": class2,
-                        "confidence": conf2
-                    })
-            elif class2 != 'unknown':
-                detections.append({
-                    "bbox": [0, 0, cw, ch],
-                    "class": class2,
-                    "confidence": conf2
-                })
-            elif class1 != 'unknown':
+            # If classifier is not confident, check if YOLO saw a product
+            if has_product:
+                print(f"Classifier prediction '{best_class}' not confident ({best_conf:.4f}), but YOLO detected product (conf: {product_conf:.4f}). Flagging as unknown_product.")
                 detections.append({
                     "bbox": [sx, sy, sx+size_w, sy+size_h],
-                    "class": class1,
-                    "confidence": conf1
+                    "class": "unknown_product",
+                    "confidence": float(product_conf) if product_conf > 0 else 0.50
                 })
+            else:
+                print(f"No confident product or YOLO product detected. Ignoring to prevent background/human false additions.")
                     
         # Determine if needs verification (any detection with confidence < 80% or no detections)
         needs_verification = False
@@ -1033,11 +1112,31 @@ def run_retrain_thread():
         t0 = time.time()
         print("Extracting features from updated dataset...")
         dataset_dir = './dataset'
-        class_names = sorted([
-            d for d in os.listdir(dataset_dir)
-            if os.path.isdir(os.path.join(dataset_dir, d))
-            and not d.startswith('temp_') # Ignore temp_ directories from crawler
-        ])
+        
+        # Dynamically load classes from templates.json to keep consistent class count (111 classes)
+        templates_file = "./modules/templates.json"
+        if not os.path.exists(templates_file):
+            templates_file = "modules/templates.json"
+            
+        class_names = []
+        try:
+            with open(templates_file, 'r', encoding='utf-8') as f:
+                templates_data = json.load(f)
+                for item in templates_data:
+                    if item.get("category") in ["Indian Groceries", "Beverages"]:
+                        class_names.append(item.get("key"))
+        except Exception as e:
+            print(f"Error loading classes list in retraining: {e}")
+            
+        # Ensure standard fallbacks are included
+        for fallback in ["tata_salt", "maggi", "amul_butter", "atta", "dettol", "haldirams", "mustard_oil", "taj_mahal"]:
+            if fallback not in class_names:
+                class_names.append(fallback)
+                
+        class_names.sort()
+        if "unknown" not in class_names:
+            class_names.append("unknown")
+            
         num_classes = len(class_names)
         
         # Load features cache
@@ -1054,11 +1153,16 @@ def run_retrain_thread():
         if feature_model is not None:
             for idx, cls in enumerate(class_names):
                 cls_dir = os.path.join(dataset_dir, cls)
-                paths = [
-                    os.path.join(cls_dir, f) for f in os.listdir(cls_dir)
-                    if os.path.isfile(os.path.join(cls_dir, f))
-                    and os.path.splitext(f)[1].lower() in ('.jpg','.jpeg','.png','.webp')
-                ]
+                if os.path.exists(cls_dir):
+                    all_paths = [
+                        os.path.join(cls_dir, f) for f in os.listdir(cls_dir)
+                        if os.path.isfile(os.path.join(cls_dir, f))
+                        and os.path.splitext(f)[1].lower() in ('.jpg','.jpeg','.png','.webp')
+                    ]
+                    real_paths = [p for p in all_paths if not os.path.basename(p).startswith('synth_img_')]
+                    paths = real_paths if len(real_paths) > 0 else all_paths
+                else:
+                    paths = []
                 
                 class_feats_list = []
                 uncached_imgs = []
@@ -1139,22 +1243,51 @@ def run_retrain_thread():
                 np.save('y.npy', y)
                 print(f"Features extracted. X shape: {X.shape}, y shape: {y.shape}")
                 
-                # 4. Save updated centroids.json
+                # 4. Save updated centroids.json (ensuring all class_names have keys to prevent KeyErrors)
                 t0 = time.time()
+                centroids_dict = {}
+                for cls in class_names:
+                    if cls in centroids_data:
+                        centroids_dict[cls] = centroids_data[cls]
+                    else:
+                        centroids_dict[cls] = np.zeros(1280).tolist()
+                
                 centroids_output = os.path.join('.', 'web_model', 'centroids.json')
                 os.makedirs(os.path.dirname(centroids_output), exist_ok=True)
                 with open(centroids_output, 'w', encoding='utf-8') as f:
-                    json.dump({'classes': class_names, 'centroids': centroids_data}, f)
+                    json.dump({'classes': class_names, 'centroids': centroids_dict}, f)
                 print(f"[Profiling] Saving centroids.json took {time.time() - t0:.4f}s")
                 
-                # 5. Build Prototypical Analytical weights instead of slow SGD fit
-                # Prototypical analytical weights are 100% robust, exact, and require 0 epochs.
+                # 5. Train Dense Softmax classifier via Keras SGD fit
                 t0 = time.time()
-                W = np.zeros((1280, num_classes), dtype=np.float32)
-                for idx, cls in enumerate(class_names):
-                    if cls in centroids_data:
-                        W[:, idx] = centroids_data[cls]
-                biases = np.zeros(num_classes, dtype=np.float32)
+                print("Training Dense classifier head via SGD...")
+                clf = tf.keras.Sequential([
+                    tf.keras.layers.Input(shape=(1280,)),
+                    tf.keras.layers.Dropout(0.35),
+                    tf.keras.layers.Dense(num_classes, activation='softmax')
+                ])
+                clf.compile(
+                    optimizer=tf.keras.optimizers.Adam(learning_rate=0.005),
+                    loss='sparse_categorical_crossentropy',
+                    metrics=['accuracy']
+                )
+                clf.fit(X, y, epochs=150, batch_size=32, verbose=0)
+                
+                # Retrain on full dataset for final weights
+                print("Retraining on full dataset for final weights...")
+                final_clf = tf.keras.Sequential([
+                    tf.keras.layers.Input(shape=(1280,)),
+                    tf.keras.layers.Dense(num_classes, activation='softmax')
+                ])
+                final_clf.compile(
+                    optimizer=tf.keras.optimizers.Adam(learning_rate=0.003),
+                    loss='sparse_categorical_crossentropy',
+                    metrics=['accuracy']
+                )
+                final_clf.fit(X, y, epochs=100, batch_size=32, verbose=0)
+                
+                dense_layer = final_clf.layers[0]
+                W, biases = dense_layer.get_weights() # W: (1280, num_classes), biases: (num_classes,)
                 
                 # Save classifier.json (for backward compatibility)
                 clf_output = os.path.join('.', 'web_model', 'classifier.json')

@@ -578,6 +578,7 @@
                 <div class="webcam-controls-row">
                   <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-primary" id="btn-toggle-webcam">Start Camera Scan</button>
+                    <select id="webcam-camera-select" style="padding: 10px 14px; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--glass-border); border-radius: var(--border-radius-sm); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;"></select>
                     <button type="button" class="btn btn-success hidden" id="btn-capture-webcam">Capture Frame</button>
                     <div style="display: flex; gap: 8px; align-items: center; margin-left: 10px;">
                       <label class="toggle-switch">
@@ -594,43 +595,95 @@
 
                  <div class="instruction-box glassmorphic-subtle" style="margin-top: 5px;">
                   <h5>Webcam Scanner Tip:</h5>
-                  <p>Hold an Indian grocery item (e.g. Tata Salt, Maggi Noodles, Amul Butter) in front of the lens. The AI model will run real-time inference, scan the item, play a chime, and fill in the details automatically!</p>
+                  <p>Hold an Indian Beverage item (e.g., Thums Up, Coca-Cola, Sprite, Maaza) in front of the lens. The AI model runs real-time object detection with hand filtering to scan items automatically. Don't have physical bottles? Click any sample beverage card below to simulate a scan instantly!</p>
                 </div>
 
-                <!-- AI Learned Products Catalog -->
+                <!-- AI Learned Beverage Sample Products Panel -->
                 <div class="webcam-learned-section glassmorphic-subtle" style="margin-top: 15px; padding: 15px; border-radius: var(--border-radius-md);">
-                  <h5 style="margin-top: 0; margin-bottom: 12px; color: var(--color-accent); font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align: middle;">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    AI Trained Products (8 Items)
-                  </h5>
-                  <div class="webcam-learned-grid">
-                    <div class="learned-item-badge" data-learned="tata_salt">
-                      <span class="bullet" style="background-color: #3b82f6;"></span> Tata Salt (1kg Pack)
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <h5 style="margin: 0; color: var(--color-accent); font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                      </svg>
+                      Test Scanner with Sample Beverages
+                    </h5>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <button type="button" id="btn-trigger-upload-test" class="btn btn-sm btn-outline-accent" style="padding: 4px 10px; font-size: 11px; font-weight: 600;">
+                        📁 Upload Custom Image
+                      </button>
+                      <input type="file" id="input-custom-test-image" accept="image/*" style="display: none;">
+                      <span style="font-size: 11px; color: var(--color-accent); background: rgba(6, 182, 212, 0.12); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.25);">
+                        No physical items needed
+                      </span>
                     </div>
-                    <div class="learned-item-badge" data-learned="maggi">
-                      <span class="bullet" style="background-color: #eab308;"></span> Maggi 2-Min Noodles
-                    </div>
-                    <div class="learned-item-badge" data-learned="amul_butter">
-                      <span class="bullet" style="background-color: #facc15;"></span> Amul Butter (500g)
-                    </div>
-                    <div class="learned-item-badge" data-learned="atta">
-                      <span class="bullet" style="background-color: #ea580c;"></span> Aashirvaad Atta (10kg)
-                    </div>
-                    <div class="learned-item-badge" data-learned="mustard_oil">
-                      <span class="bullet" style="background-color: #ca8a04;"></span> Fortune Mustard Oil (1L)
-                    </div>
-                    <div class="learned-item-badge" data-learned="taj_mahal">
-                      <span class="bullet" style="background-color: #312e81;"></span> Taj Mahal Tea (500g)
-                    </div>
-                    <div class="learned-item-badge" data-learned="haldirams">
-                      <span class="bullet" style="background-color: #dc2626;"></span> Haldiram's Bhujia Sev
-                    </div>
-                    <div class="learned-item-badge" data-learned="dettol">
-                      <span class="bullet" style="background-color: #16a34a;"></span> Dettol Liquid Handwash
-                    </div>
+                  </div>
+
+                  <div class="sample-beverage-grid">
+                    <button type="button" class="btn-sample-card" data-sample-class="thums_up" data-sample-img="dataset/thums_up/img_bb_0.jpg">
+                      <img src="dataset/thums_up/img_bb_0.jpg" alt="Thums Up" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Thums Up</span>
+                        <span class="sample-card-meta">750ml • ₹45</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="coca_cola" data-sample-img="dataset/coca_cola/img_bb_0.jpg">
+                      <img src="dataset/coca_cola/img_bb_0.jpg" alt="Coca-Cola" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Coca-Cola</span>
+                        <span class="sample-card-meta">750ml • ₹45</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="sprite" data-sample-img="dataset/sprite/img_bb_0.jpg">
+                      <img src="dataset/sprite/img_bb_0.jpg" alt="Sprite" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Sprite</span>
+                        <span class="sample-card-meta">750ml • ₹45</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="maaza" data-sample-img="dataset/maaza/img_crawl_0.jpg">
+                      <img src="dataset/maaza/img_crawl_0.jpg" alt="Maaza" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Maaza Mango</span>
+                        <span class="sample-card-meta">600ml • ₹42</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="real_juice" data-sample-img="dataset/real_juice/img_crawl_0.jpg">
+                      <img src="dataset/real_juice/img_crawl_0.jpg" alt="Real Juice" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Real Fruit Juice</span>
+                        <span class="sample-card-meta">1L • ₹110</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="amul_kool" data-sample-img="dataset/amul_kool/img_crawl_0.jpg">
+                      <img src="dataset/amul_kool/img_crawl_0.jpg" alt="Amul Kool" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Amul Kool</span>
+                        <span class="sample-card-meta">200ml • ₹30</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="nescafe_coffee" data-sample-img="dataset/nescafe_coffee/img_crawl_0.jpg">
+                      <img src="dataset/nescafe_coffee/img_crawl_0.jpg" alt="Nescafé Coffee" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Nescafé Coffee</span>
+                        <span class="sample-card-meta">50g • ₹165</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
+                    <button type="button" class="btn-sample-card" data-sample-class="taj_mahal_tea" data-sample-img="dataset/taj_mahal_tea/img_bb_0.jpg">
+                      <img src="dataset/taj_mahal_tea/img_bb_0.jpg" alt="Taj Mahal Tea" class="sample-card-thumb">
+                      <div class="sample-card-details">
+                        <span class="sample-card-title">Taj Mahal Tea</span>
+                        <span class="sample-card-meta">500g • ₹360</span>
+                      </div>
+                      <span class="sample-scan-badge">Scan ⚡</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1398,6 +1451,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.17.0/dist/tf-converter.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.17.0/dist/tf-backend-wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

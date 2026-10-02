@@ -119,7 +119,7 @@ def download_real_dataset_fallback(base_dir, classes):
             
         downloaded = 0
         for prod_id in prod_ids:
-            if downloaded >= 25:
+            if downloaded >= 50:
                 break
                 
             bb_url = f"https://www.bigbasket.com/pd/{prod_id}/"
@@ -135,7 +135,7 @@ def download_real_dataset_fallback(base_dir, classes):
                     print(f"  Found {len(unique_urls)} raw image URLs for ID {prod_id}")
                     
                     for url in unique_urls:
-                        if downloaded >= 25:
+                        if downloaded >= 50:
                             break
                         # Standardize to high-res '/l/'
                         url_high_res = re.sub(r'/media/uploads/p/[a-z]+/', '/media/uploads/p/l/', url)
@@ -158,9 +158,9 @@ def download_real_dataset_fallback(base_dir, classes):
         print(f"  Downloaded {downloaded} real images for class: {cls}")
         
         # If we got less than 15 real images, top up with synthetic fallback
-        if downloaded < 15:
+        if downloaded < 30:
             bg_color = colors.get(cls, (128, 128, 128))
-            generate_synthetic_for_class(cls_dir, cls, bg_color, num_images=(20 - downloaded))
+            generate_synthetic_for_class(cls_dir, cls, bg_color, num_images=(40 - downloaded))
 
 def download_dataset_via_crawler(base_dir, classes):
     """Downloads real-world images from Bing using icrawler."""
@@ -197,7 +197,7 @@ def download_dataset_via_crawler(base_dir, classes):
         cls_dir = os.path.join(base_dir, cls)
         if os.path.exists(cls_dir):
             existing_files = [f for f in os.listdir(cls_dir) if os.path.isfile(os.path.join(cls_dir, f))]
-            if len(existing_files) >= 15:
+            if len(existing_files) >= 40:
                 print(f"Class '{cls}' already has {len(existing_files)} images. Skipping crawling.")
                 continue
                 
@@ -206,12 +206,12 @@ def download_dataset_via_crawler(base_dir, classes):
         queries = search_queries.get(cls, [f"{cls} package"])
         print(f"\nCrawling images for class: {cls}...")
         
-        # We download up to 15 images per class (with data augmentation, this is plenty and keeps training fast on CPU)
-        images_per_query = 15
+        # We download up to 40 images per class (with data augmentation, this is plenty and keeps training fast on CPU)
+        images_per_query = 40
         downloaded_count = 0
         
         for q in queries:
-            if downloaded_count >= 15:
+            if downloaded_count >= 40:
                 break
                 
             temp_dir = os.path.join(base_dir, f"temp_{cls}_{q.replace(' ', '_')}")
@@ -224,7 +224,7 @@ def download_dataset_via_crawler(base_dir, classes):
                 
                 # Move files from temp_dir to cls_dir and rename to avoid conflicts
                 for f in os.listdir(temp_dir):
-                    if downloaded_count >= 15:
+                    if downloaded_count >= 40:
                         break
                     src = os.path.join(temp_dir, f)
                     if os.path.isfile(src):
@@ -242,9 +242,9 @@ def download_dataset_via_crawler(base_dir, classes):
         print(f"  Total crawled images for {cls}: {downloaded_count}")
         
         # If we didn't get enough images, generate synthetic shapes to top up
-        if downloaded_count < 10:
+        if downloaded_count < 30:
             print(f"  Only got {downloaded_count} images. Generating synthetic fallbacks...")
-            generate_synthetic_for_class(cls_dir, cls, (128, 128, 128), num_images=(15 - downloaded_count))
+            generate_synthetic_for_class(cls_dir, cls, (128, 128, 128), num_images=(40 - downloaded_count))
 
 def main():
     dataset_dir = "./dataset"

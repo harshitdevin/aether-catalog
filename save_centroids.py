@@ -16,8 +16,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 import tensorflow as tf
 
-DATASET_DIR = './dataset'
-OUTPUT_FILE = './web_model/centroids.json'
+DATASET_DIR = os.path.abspath('./dataset')
+OUTPUT_FILE = os.path.abspath('./web_model/centroids.json')
 IMG_SIZE    = (224, 224)
 BATCH       = 16
 

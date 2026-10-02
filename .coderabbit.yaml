@@ -1,0 +1,14 @@
+# CodeRabbit Configuration
+language: "en-US"
+reviews:
+  profile: "assertive"
+  collapse_redundant_comments: true
+  path_filters:
+    - "!web_model/**" # Ignore binary weights and model specs
+    - "!dataset/**"   # Ignore raw dataset image files
+chat:
+  auto_reply: true
+instructions:
+  - "Ensure no TensorFlow.js backend regressions are introduced in app.js."
+  - "Verify that cv2 color conversion and image processing in server.py remain thread-safe."
+  - "Highlight any modifications to model inference thresholds and check for potential false positive implications."

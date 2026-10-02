@@ -973,22 +973,6 @@
     "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>red_label</text></svg>"
   },
   {
-    "key": "taj_mahal_tea",
-    "name": "Brooke Bond Taj Mahal Tea",
-    "category": "Indian Groceries",
-    "value": 350.0,
-    "manufacturer": "HUL",
-    "model": "500g Pack",
-    "tags": [
-      "tea",
-      "taj mahal",
-      "beverage",
-      "premium chai"
-    ],
-    "notes": "Brooke Bond Taj Mahal Tea by HUL (500g Pack). Ideal for Indian households.",
-    "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>taj_mahal_te</text></svg>"
-  },
-  {
     "key": "tata_tea",
     "name": "Tata Tea Premium",
     "category": "Indian Groceries",
@@ -1412,6 +1396,7 @@
     "tags": [
       "detergent",
       "surf excel",
+      "surfexcel",
       "laundry",
       "cleaning"
     ],
@@ -1846,5 +1831,141 @@
     ],
     "notes": "Dettol Liquid Antiseptic (500ml Bottle) for first aid and personal hygiene.",
     "image": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e293b'/><text x='50' y='55' fill='%236366f1' font-family='sans-serif' font-size='10' font-weight='bold' text-anchor='middle'>dettol</text></svg>"
+  },
+  {
+    "key": "thums_up",
+    "name": "Thums Up Soft Drink",
+    "category": "Beverages",
+    "value": 40.0,
+    "manufacturer": "Coca-Cola India",
+    "model": "750ml Bottle / 300ml Can",
+    "tags": [
+      "beverages",
+      "soft drink",
+      "soda",
+      "thums up",
+      "cold drink"
+    ],
+    "notes": "Strong fizzy cola soft drink popular across India.",
+    "image": "assets/thums_up.png"
+  },
+  {
+    "key": "coca_cola",
+    "name": "Coca-Cola Soft Drink",
+    "category": "Beverages",
+    "value": 40.0,
+    "manufacturer": "Coca-Cola India",
+    "model": "750ml Plastic Bottle / Can",
+    "tags": [
+      "beverages",
+      "soft drink",
+      "coca cola",
+      "soda",
+      "cold drink"
+    ],
+    "notes": "Classic refreshing carbonated cola beverage.",
+    "image": "assets/coca_cola.png"
+  },
+  {
+    "key": "sprite",
+    "name": "Sprite Lemon-Lime Drink",
+    "category": "Beverages",
+    "value": 40.0,
+    "manufacturer": "Coca-Cola India",
+    "model": "750ml Bottle / 300ml Can",
+    "tags": [
+      "beverages",
+      "soft drink",
+      "sprite",
+      "lemon lime",
+      "soda"
+    ],
+    "notes": "Clear lemon-lime flavored carbonated soft drink.",
+    "image": "assets/sprite.png"
+  },
+  {
+    "key": "maaza",
+    "name": "Maaza Mango Fruit Drink",
+    "category": "Beverages",
+    "value": 65.0,
+    "manufacturer": "Coca-Cola India",
+    "model": "1.2L Bottle / 200ml Pack",
+    "tags": [
+      "beverages",
+      "mango drink",
+      "maaza",
+      "juice",
+      "fruit drink"
+    ],
+    "notes": "Rich Alphonso mango fruit juice drink.",
+    "image": "assets/maaza.png"
+  },
+  {
+    "key": "real_juice",
+    "name": "Real Fruit Power Juice",
+    "category": "Beverages",
+    "value": 115.0,
+    "manufacturer": "Dabur",
+    "model": "1L Tetra Pack",
+    "tags": [
+      "beverages",
+      "real juice",
+      "fruit juice",
+      "mixed fruit",
+      "tetra pack"
+    ],
+    "notes": "100% natural fruit juice tetra pack.",
+    "image": "assets/real_juice.png"
+  },
+  {
+    "key": "amul_kool",
+    "name": "Amul Kool Flavoured Milk",
+    "category": "Beverages",
+    "value": 30.0,
+    "manufacturer": "Amul",
+    "model": "200ml Glass Bottle / Can",
+    "tags": [
+      "beverages",
+      "amul kool",
+      "flavoured milk",
+      "kesar",
+      "dairy"
+    ],
+    "notes": "Delicious kesar/elaichi flavoured cold milk drink.",
+    "image": "assets/amul_kool.png"
+  },
+  {
+    "key": "nescafe_coffee",
+    "name": "Nescafe Classic Instant Coffee",
+    "category": "Beverages",
+    "value": 185.0,
+    "manufacturer": "Nestle",
+    "model": "50g Glass Jar",
+    "tags": [
+      "beverages",
+      "nescafe",
+      "coffee",
+      "instant coffee",
+      "nestle"
+    ],
+    "notes": "Premium roasted coffee beans instant powder jar.",
+    "image": "assets/nescafe_coffee.png"
+  },
+  {
+    "key": "taj_mahal_tea",
+    "name": "Brooke Bond Taj Mahal Tea",
+    "category": "Beverages",
+    "value": 290.0,
+    "manufacturer": "HUL",
+    "model": "500g Tea Box",
+    "tags": [
+      "beverages",
+      "taj mahal",
+      "tea",
+      "chai",
+      "brooke bond"
+    ],
+    "notes": "Fine estate tea leaves with rich aroma and golden liquor.",
+    "image": "assets/taj_mahal_tea.png"
   }
 ]

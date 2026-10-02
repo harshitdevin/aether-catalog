@@ -58,7 +58,7 @@ def gather_maggi():
         "maggi masala noodles package",
         "maggi noodles single pack"
     ]
-    crawled = crawl_bing_images("maggi", queries, maggi_dir, max_images=30, count_offset=bb_downloaded)
+    crawled = crawl_bing_images("maggi", queries, maggi_dir, max_images=80, count_offset=bb_downloaded)
     print(f"  Crawled {crawled} Maggi images from Bing.")
     print(f"  Total Maggi images: {len(os.listdir(maggi_dir))}")
 
@@ -98,7 +98,7 @@ def download_bigbasket_images(cls_name, prod_ids, dest_dir, count_offset=0):
             
     return downloaded - count_offset
 
-def crawl_bing_images(cls_name, queries, dest_dir, max_images=30, count_offset=0):
+def crawl_bing_images(cls_name, queries, dest_dir, max_images=80, count_offset=0):
     print(f"  Crawling Bing images for {cls_name}...")
     from icrawler.builtin import BingImageCrawler
     
@@ -148,7 +148,7 @@ def gather_surfexcel():
         "surf excel bar soap",
         "surf excel easy wash 1kg"
     ]
-    crawled = crawl_bing_images("surfexcel", queries, surf_dir, max_images=30, count_offset=bb_downloaded)
+    crawled = crawl_bing_images("surfexcel", queries, surf_dir, max_images=80, count_offset=bb_downloaded)
     print(f"  Crawled {crawled} Surf Excel images from Bing.")
     print(f"  Total Surf Excel images: {len(os.listdir(surf_dir))}")
 
@@ -168,7 +168,7 @@ def gather_tata_salt():
         "tata iodized salt pack",
         "tata salt active package"
     ]
-    crawled = crawl_bing_images("tata_salt", queries, salt_dir, max_images=30, count_offset=bb_downloaded)
+    crawled = crawl_bing_images("tata_salt", queries, salt_dir, max_images=80, count_offset=bb_downloaded)
     print(f"  Crawled {crawled} Tata Salt images from Bing.")
     print(f"  Total Tata Salt images: {len(os.listdir(salt_dir))}")
 
@@ -190,7 +190,7 @@ def gather_unknown_backgrounds():
         "empty shelf background",
         "human palm close up background"
     ]
-    crawled = crawl_bing_images("unknown", queries, unknown_dir, max_images=30, count_offset=1)
+    crawled = crawl_bing_images("unknown", queries, unknown_dir, max_images=80, count_offset=1)
     print(f"  Crawled {crawled} background images for unknown class.")
     print(f"  Total Unknown background images: {len(os.listdir(unknown_dir))}")
 
@@ -253,7 +253,7 @@ def extract_features_and_train():
     
     # Define how many augmented images to create per base image
     # If a class has fewer images, we augment more to balance the dataset
-    TARGET_IMAGES_PER_CLASS = 150
+    TARGET_IMAGES_PER_CLASS = 300
     
     for class_idx, cls in enumerate(classes):
         cls_dir = os.path.join(DATASET_DIR, cls)
@@ -359,7 +359,7 @@ def extract_features_and_train():
     history = clf.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=80,
+        epochs=200,
         batch_size=32,
         verbose=1
     )
@@ -375,7 +375,7 @@ def extract_features_and_train():
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
-    final_clf.fit(X, y, epochs=50, batch_size=32, verbose=0)
+    final_clf.fit(X, y, epochs=150, batch_size=32, verbose=0)
     
     loss, acc = final_clf.evaluate(X, y, verbose=0)
     print(f"  Final training accuracy on entire dataset: {acc*100:.2f}%")
